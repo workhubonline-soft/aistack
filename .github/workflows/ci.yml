@@ -127,13 +127,14 @@ jobs:
           VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          mkdir -p ../dist
           go build -trimpath \
             -ldflags="-s -w \
               -X 'github.com/workhubonline-soft/aistack/cmd.version=${VERSION}' \
               -X 'github.com/workhubonline-soft/aistack/cmd.commit=${COMMIT}' \
               -X 'github.com/workhubonline-soft/aistack/cmd.buildDate=${BUILD_DATE}'" \
             -o ../dist/aistack-${{ matrix.os }}-${{ matrix.arch }} \
-            ./...
+            .
 
       - name: Verify binary
         if: matrix.os == 'linux' && matrix.arch == 'amd64'
@@ -158,4 +159,7 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           scandir: '.'
-          severity: warning
+          severity: error
+          ignore_paths: >-
+            dist
+            vendor
