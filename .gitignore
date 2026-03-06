@@ -1,0 +1,31 @@
+# Binaries
+dist/
+*.exe
+*.out
+
+# Go
+vendor/
+cli/coverage.out
+cli/coverage.html
+
+# Environment / secrets
+.env
+configs/.env
+*.env.local
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+/var/log/
+
+# Temp
+/tmp/

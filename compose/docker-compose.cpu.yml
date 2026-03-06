@@ -1,0 +1,17 @@
+# CPU Profile Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.cpu.yml up
+# Optimized for CPU-only inference
+
+services:
+  ollama:
+    environment:
+      - OLLAMA_NUM_THREADS=${OLLAMA_NUM_THREADS:-0}  # 0 = auto-detect
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_NUM_PARALLEL=1
+    # CPU limits: allow full CPU usage but cap memory to avoid OOM
+    deploy:
+      resources:
+        limits:
+          memory: ${CPU_MEMORY_LIMIT:-16G}
+        reservations:
+          memory: 2G

@@ -1,0 +1,338 @@
+version: "1.0"
+# AIStack Model Catalog
+# Updated: 2025-01
+# All VRAM estimates are auto-calculated unless overridden.
+# Formula: params_b * bits/8 * 1024 + kv_cache + 5% overhead
+
+models:
+  # ── Llama 3.1 / 3.2 ──────────────────────────────────────────────────────
+  - id: llama3.2:1b
+    name: "Llama 3.2 1B"
+    family: llama
+    size: "1B"
+    params_b: 1.0
+    engine: ollama
+    ollama_tag: "llama3.2:1b"
+    description: "Ultra-fast, minimal resource usage. Great for simple tasks and edge devices."
+    tags: [fast, chat]
+    quants: [q4_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: llama3.2:3b
+    name: "Llama 3.2 3B"
+    family: llama
+    size: "3B"
+    params_b: 3.0
+    engine: ollama
+    ollama_tag: "llama3.2:3b"
+    description: "Compact but capable. Best small model for general chat on CPU."
+    tags: [fast, chat, multilingual]
+    quants: [q4_K_M, q4_K_S, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: llama3.1:8b
+    name: "Llama 3.1 8B"
+    family: llama
+    size: "8B"
+    params_b: 8.0
+    engine: ollama
+    ollama_tag: "llama3.1:8b"
+    description: "Excellent balance of quality and speed. Strong reasoning and instruction following."
+    tags: [chat, coding, fast, multilingual]
+    quants: [q4_K_M, q4_K_S, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: llama3.1:70b
+    name: "Llama 3.1 70B"
+    family: llama
+    size: "70B"
+    params_b: 70.0
+    engine: ollama
+    ollama_tag: "llama3.1:70b"
+    description: "Near-frontier quality. Excellent for complex reasoning, analysis, and coding."
+    tags: [chat, coding, long-context]
+    quants: [q2_K, q3_K_M, q4_K_M, q4_K_S, q5_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  # ── Qwen 2.5 ─────────────────────────────────────────────────────────────
+  - id: qwen2.5:0.5b
+    name: "Qwen 2.5 0.5B"
+    family: qwen
+    size: "0.5B"
+    params_b: 0.5
+    engine: ollama
+    ollama_tag: "qwen2.5:0.5b"
+    description: "Smallest usable model. Excellent for testing and ultra-low-resource environments."
+    tags: [fast, multilingual]
+    quants: [q4_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 32768
+    default_ctx: 4096
+
+  - id: qwen2.5:3b
+    name: "Qwen 2.5 3B"
+    family: qwen
+    size: "3B"
+    params_b: 3.0
+    engine: ollama
+    ollama_tag: "qwen2.5:3b"
+    description: "Strong multilingual (Chinese/Ukrainian/Russian). Good general use on CPU."
+    tags: [fast, chat, multilingual, coding]
+    quants: [q4_K_M, q5_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 32768
+    default_ctx: 4096
+
+  - id: qwen2.5:7b
+    name: "Qwen 2.5 7B"
+    family: qwen
+    size: "7B"
+    params_b: 7.0
+    engine: ollama
+    ollama_tag: "qwen2.5:7b"
+    description: "Excellent all-rounder. Top multilingual support, strong coding ability."
+    tags: [chat, coding, multilingual, fast]
+    quants: [q4_K_M, q4_K_S, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: qwen2.5:14b
+    name: "Qwen 2.5 14B"
+    family: qwen
+    size: "14B"
+    params_b: 14.0
+    engine: ollama
+    ollama_tag: "qwen2.5:14b"
+    description: "Best-in-class 14B. Exceptional for Ukrainian/Russian/Chinese + coding + reasoning."
+    tags: [chat, coding, multilingual, long-context]
+    quants: [q4_K_M, q4_K_S, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: qwen2.5:32b
+    name: "Qwen 2.5 32B"
+    family: qwen
+    size: "32B"
+    params_b: 32.0
+    engine: ollama
+    ollama_tag: "qwen2.5:32b"
+    description: "Near-70B quality at 32B size. Superb multilingual and complex tasks."
+    tags: [chat, coding, multilingual, long-context]
+    quants: [q2_K, q3_K_M, q4_K_M, q4_K_S, q5_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: qwen2.5:72b
+    name: "Qwen 2.5 72B"
+    family: qwen
+    size: "72B"
+    params_b: 72.0
+    engine: ollama
+    ollama_tag: "qwen2.5:72b"
+    description: "Top-tier open model. Exceptional multilingual quality and reasoning."
+    tags: [chat, coding, multilingual, long-context]
+    quants: [q2_K, q3_K_M, q4_K_M, q4_K_S]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  # ── Qwen 2.5 Coder ────────────────────────────────────────────────────────
+  - id: qwen2.5-coder:7b
+    name: "Qwen 2.5 Coder 7B"
+    family: qwen
+    size: "7B"
+    params_b: 7.0
+    engine: ollama
+    ollama_tag: "qwen2.5-coder:7b"
+    description: "Best 7B coding model. Excellent for code completion, review, debugging."
+    tags: [coding, fast]
+    quants: [q4_K_M, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  - id: qwen2.5-coder:14b
+    name: "Qwen 2.5 Coder 14B"
+    family: qwen
+    size: "14B"
+    params_b: 14.0
+    engine: ollama
+    ollama_tag: "qwen2.5-coder:14b"
+    description: "State-of-the-art coding model. Handles large codebases with long context."
+    tags: [coding, long-context]
+    quants: [q4_K_M, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  # ── Mistral / Mixtral ─────────────────────────────────────────────────────
+  - id: mistral:7b
+    name: "Mistral 7B v0.3"
+    family: mistral
+    size: "7B"
+    params_b: 7.0
+    engine: ollama
+    ollama_tag: "mistral:7b"
+    description: "Fast and efficient. Good for structured output and function calling."
+    tags: [chat, coding, fast]
+    quants: [q4_K_M, q4_K_S, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 32768
+    default_ctx: 4096
+
+  - id: mixtral:8x7b
+    name: "Mixtral 8x7B"
+    family: mistral
+    size: "8x7B (MoE)"
+    params_b: 46.7
+    engine: ollama
+    ollama_tag: "mixtral:8x7b"
+    description: "Mixture of Experts. High quality at 7B active params, needs 24GB VRAM for full GPU."
+    tags: [chat, coding, long-context]
+    quants: [q4_K_M, q4_K_S, q5_K_M, q6_K]
+    default_quant: q4_K_M
+    max_ctx: 32768
+    default_ctx: 4096
+
+  # ── Gemma ─────────────────────────────────────────────────────────────────
+  - id: gemma2:2b
+    name: "Gemma 2 2B"
+    family: gemma
+    size: "2B"
+    params_b: 2.6
+    engine: ollama
+    ollama_tag: "gemma2:2b"
+    description: "Google's efficient small model. Strong for its size, good for CPU use."
+    tags: [fast, chat]
+    quants: [q4_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 8192
+    default_ctx: 4096
+
+  - id: gemma2:9b
+    name: "Gemma 2 9B"
+    family: gemma
+    size: "9B"
+    params_b: 9.0
+    engine: ollama
+    ollama_tag: "gemma2:9b"
+    description: "Competitive 9B model from Google with novel architecture."
+    tags: [chat, coding]
+    quants: [q4_K_M, q5_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 8192
+    default_ctx: 4096
+
+  - id: gemma2:27b
+    name: "Gemma 2 27B"
+    family: gemma
+    size: "27B"
+    params_b: 27.0
+    engine: ollama
+    ollama_tag: "gemma2:27b"
+    description: "Punches above its weight. Outperforms many 70B models on benchmarks."
+    tags: [chat, coding, long-context]
+    quants: [q4_K_M, q4_K_S, q5_K_M]
+    default_quant: q4_K_M
+    max_ctx: 8192
+    default_ctx: 4096
+
+  # ── DeepSeek ──────────────────────────────────────────────────────────────
+  - id: deepseek-r1:7b
+    name: "DeepSeek R1 7B"
+    family: deepseek
+    size: "7B"
+    params_b: 7.0
+    engine: ollama
+    ollama_tag: "deepseek-r1:7b"
+    description: "Reasoning-focused model. Chain-of-thought, math, logic."
+    tags: [chat, coding, fast]
+    quants: [q4_K_M, q5_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 65536
+    default_ctx: 8192
+
+  - id: deepseek-r1:14b
+    name: "DeepSeek R1 14B"
+    family: deepseek
+    size: "14B"
+    params_b: 14.0
+    engine: ollama
+    ollama_tag: "deepseek-r1:14b"
+    description: "Strong reasoning and code. Especially good for math and structured tasks."
+    tags: [chat, coding, long-context]
+    quants: [q4_K_M, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 65536
+    default_ctx: 8192
+
+  - id: deepseek-r1:32b
+    name: "DeepSeek R1 32B"
+    family: deepseek
+    size: "32B"
+    params_b: 32.0
+    engine: ollama
+    ollama_tag: "deepseek-r1:32b"
+    description: "Top reasoning quality. Comparable to Claude 3.5 Haiku on reasoning tasks."
+    tags: [chat, coding, long-context]
+    quants: [q2_K, q3_K_M, q4_K_M, q5_K_M]
+    default_quant: q4_K_M
+    max_ctx: 65536
+    default_ctx: 8192
+
+  # ── Phi ───────────────────────────────────────────────────────────────────
+  - id: phi4:14b
+    name: "Phi-4 14B"
+    family: phi
+    size: "14B"
+    params_b: 14.0
+    engine: ollama
+    ollama_tag: "phi4"
+    description: "Microsoft's best small-but-capable model. Exceptional for 14B size."
+    tags: [chat, coding, fast]
+    quants: [q4_K_M, q5_K_M, q6_K, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 16384
+    default_ctx: 4096
+
+  - id: phi3.5:mini
+    name: "Phi 3.5 Mini 3.8B"
+    family: phi
+    size: "3.8B"
+    params_b: 3.8
+    engine: ollama
+    ollama_tag: "phi3.5"
+    description: "Microsoft's compact model. Excellent for CPU, good reasoning for its size."
+    tags: [fast, chat, coding]
+    quants: [q4_K_M, q8_0]
+    default_quant: q4_K_M
+    max_ctx: 131072
+    default_ctx: 8192
+
+  # ── Nomic Embed (for RAG) ─────────────────────────────────────────────────
+  - id: nomic-embed-text
+    name: "Nomic Embed Text"
+    family: embedding
+    size: "137M"
+    params_b: 0.137
+    engine: ollama
+    ollama_tag: "nomic-embed-text"
+    description: "Embedding model for RAG/vector search. Very low resource usage."
+    tags: [embedding, fast]
+    quants: [fp16]
+    default_quant: fp16
+    max_ctx: 8192
+    default_ctx: 8192
+    vram_mib: 512
+    ram_mib: 1024

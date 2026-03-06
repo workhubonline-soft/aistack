@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  GO_VERSION: "1.22"
+
+jobs:
+  # ── Lint & Vet ───────────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Vet
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: cli/go.sum
+
+      - name: go vet
+        working-directory: cli
+        run: go vet ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.57
+          working-directory: cli
+          args: --timeout=5m
+
+      - name: Validate catalog YAML
+        run: |
+          python3 -c "
+          import yaml, sys
+          try:
+              data = yaml.safe_load(open('models/catalog.yaml'))
+              models = data.get('models', [])
+              print(f'✓ Catalog valid: {len(models)} models')
+              # Basic schema check
+              required = ['id','name','family','params_b','engine','quants']
+              for m in models:
+                  for field in required:
+                      if field not in m:
+                          print(f'✗ Model {m.get(\"id\",\"?\")} missing field: {field}')
+                          sys.exit(1)
+              print('✓ All model fields valid')
+          except Exception as e:
+              print(f'✗ YAML error: {e}')
+              sys.exit(1)
+          "
+
+      - name: Validate Docker Compose
+        run: |
+          docker compose -f compose/docker-compose.yml config --quiet
+          docker compose -f compose/docker-compose.yml \
+            -f compose/docker-compose.cpu.yml config --quiet
+          docker compose -f compose/docker-compose.yml \
+            -f compose/docker-compose.nvidia.yml config --quiet
+          echo "✓ All compose files valid"
+
+  # ── Test ─────────────────────────────────────────────────────────────────────
+  test:
+    name: Test (Go ${{ matrix.go-version }})
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        go-version: ["1.22", "1.23"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: cli/go.sum
+
+      - name: Download dependencies
+        working-directory: cli
+        run: go mod download
+
+      - name: Run tests
+        working-directory: cli
+        run: go test ./... -v -race -timeout 60s -coverprofile=coverage.out
+
+      - name: Upload coverage to Codecov
+        if: matrix.go-version == '1.22'
+        uses: codecov/codecov-action@v4
+        with:
+          file: cli/coverage.out
+          flags: unittests
+          fail_ci_if_error: false
+
+  # ── Build ────────────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.os }}/${{ matrix.arch }})
+    runs-on: ubuntu-22.04
+    needs: [lint, test]
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: cli/go.sum
+
+      - name: Build
+        working-directory: cli
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          go build -trimpath \
+            -ldflags="-s -w \
+              -X 'github.com/workhubonline-soft/aistack/cmd.version=${VERSION}' \
+              -X 'github.com/workhubonline-soft/aistack/cmd.commit=${COMMIT}' \
+              -X 'github.com/workhubonline-soft/aistack/cmd.buildDate=${BUILD_DATE}'" \
+            -o ../dist/aistack-${{ matrix.os }}-${{ matrix.arch }} \
+            ./...
+
+      - name: Verify binary
+        if: matrix.os == 'linux' && matrix.arch == 'amd64'
+        run: |
+          ./dist/aistack-linux-amd64 version
+          echo "✓ Binary runs"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aistack-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/aistack-${{ matrix.os }}-${{ matrix.arch }}
+          retention-days: 7
+
+  # ── Shell script lint ────────────────────────────────────────────────────────
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: '.'
+          severity: warning

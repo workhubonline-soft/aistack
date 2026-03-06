@@ -1,0 +1,160 @@
+name: aistack
+
+# ── Networks ──────────────────────────────────────────────────────────────────
+networks:
+  aistack-net:
+    driver: bridge
+    name: aistack-net
+
+# ── Volumes ───────────────────────────────────────────────────────────────────
+volumes:
+  ollama-data:
+    name: aistack-ollama-data
+  openwebui-data:
+    name: aistack-openwebui-data
+  prometheus-data:
+    name: aistack-prometheus-data
+  grafana-data:
+    name: aistack-grafana-data
+
+# ── Services ──────────────────────────────────────────────────────────────────
+services:
+
+  # ── Ollama ─────────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: aistack-ollama
+    restart: unless-stopped
+    networks:
+      - aistack-net
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "${OLLAMA_HOST:-127.0.0.1}:${OLLAMA_PORT:-11434}:11434"
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+      - OLLAMA_ORIGINS=${OLLAMA_ORIGINS:-*}
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-1}
+      - OLLAMA_NUM_PARALLEL=${OLLAMA_NUM_PARALLEL:-1}
+      - OLLAMA_FLASH_ATTENTION=${OLLAMA_FLASH_ATTENTION:-1}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ── Open WebUI ─────────────────────────────────────────────────────────────
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: aistack-openwebui
+    restart: unless-stopped
+    networks:
+      - aistack-net
+    volumes:
+      - openwebui-data:/app/backend/data
+    ports:
+      - "${WEBUI_HOST:-0.0.0.0}:${WEBUI_PORT:-3000}:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
+      - WEBUI_AUTH=${WEBUI_AUTH:-True}
+      - ENABLE_SIGNUP=${ENABLE_SIGNUP:-True}
+      - DEFAULT_USER_ROLE=${DEFAULT_USER_ROLE:-user}
+      - ENABLE_COMMUNITY_SHARING=${ENABLE_COMMUNITY_SHARING:-False}
+      - WEBUI_NAME=${WEBUI_NAME:-AIStack}
+      - ENABLE_ADMIN_EXPORT=${ENABLE_ADMIN_EXPORT:-True}
+      - ENV=${WEBUI_ENV:-prod}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ── Nginx (optional, enabled via profile) ──────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: aistack-nginx
+    restart: unless-stopped
+    profiles: ["nginx"]
+    networks:
+      - aistack-net
+    volumes:
+      - ./configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    depends_on:
+      openwebui:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+
+  # ── Prometheus (optional, enabled via profile) ─────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aistack-prometheus
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    networks:
+      - aistack-net
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Grafana (optional, enabled via profile) ────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aistack-grafana
+    restart: unless-stopped
+    profiles: ["monitoring"]
+    networks:
+      - aistack-net
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-aistack}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,81 @@
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment  # Too strict for readability
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/workhubonline-soft/aistack
+
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+    disabled-checks:
+      - commentFormatting
+
+  cyclop:
+    max-complexity: 20  # LLM estimate functions can be complex
+
+  funlen:
+    lines: 100
+    statements: 60
+
+  lll:
+    line-length: 120
+
+  exhaustive:
+    default-signifies-exhaustive: true
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - unused
+    - gofmt
+    - goimports
+    - gocritic
+    - misspell
+    - prealloc
+    - unconvert
+    - unparam
+    - whitespace
+    - wsl
+    - noctx
+    - bodyclose
+
+  disable:
+    - depguard    # Too strict for CLI tools
+    - exhaustruct # Too verbose
+    - godot       # Comment formatting
+    - gomnd       # Magic numbers — needed for bit calculations
+    - wrapcheck   # Too strict
+    - varnamelen  # Short names common in Go
+
+issues:
+  exclude-rules:
+    # Allow fmt.Println in CLI commands
+    - path: cmd/
+      linters: [forbidigo]
+
+    # Tests can be longer
+    - path: _test\.go
+      linters: [funlen, cyclop]
+
+    # Main and cmd setup can be longer
+    - path: cmd/root\.go
+      linters: [funlen]
+
+  max-issues-per-linter: 0
+  max-same-issues: 0
