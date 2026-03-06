@@ -206,10 +206,13 @@ func runUp(monitoring, nginx bool) error {
 		profiles = append(profiles, "nginx")
 	}
 
-	args := append(composeFiles, "up", "-d", "--remove-orphans")
+	composeArgs := make([]string, len(composeFiles))
+	copy(composeArgs, composeFiles)
+	composeArgs = append(composeArgs, "up", "-d", "--remove-orphans")
 	if len(profiles) > 0 {
-		args = append([]string{"--profile", strings.Join(profiles, ",")}, args...)
+		composeArgs = append([]string{"--profile", strings.Join(profiles, ",")}, composeArgs...)
 	}
+	args := composeArgs
 
 	cmd := exec.Command("docker", append([]string{"compose"}, args...)...)
 	cmd.Stdout = os.Stdout
@@ -237,7 +240,9 @@ func newDownCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			color.Cyan("\n  Stopping AIStack...\n")
 			composeFiles := buildComposeArgs()
-			cmdArgs := append(composeFiles, "down")
+			cmdArgs := make([]string, len(composeFiles))
+			copy(cmdArgs, composeFiles)
+			cmdArgs = append(cmdArgs, "down")
 			if removeVolumes {
 				cmdArgs = append(cmdArgs, "-v")
 				color.Yellow("  ⚠ Removing all volumes (data will be lost!)\n")
@@ -327,7 +332,9 @@ func newUpdateCmd() *cobra.Command {
 			s.Suffix = "  Pulling latest images"
 			s.Start()
 			composeFiles := buildComposeArgs()
-			pullArgs := append(composeFiles, "pull")
+			pullArgs := make([]string, len(composeFiles))
+			copy(pullArgs, composeFiles)
+			pullArgs = append(pullArgs, "pull")
 			c := exec.Command("docker", append([]string{"compose"}, pullArgs...)...)
 			c.Dir = composeDir
 			if err := c.Run(); err != nil {
@@ -476,36 +483,47 @@ func runReport(outputPath string) error {
 func collectReportData(tw *tar.Writer) {
 	// Doctor output
 	if out, err := exec.Command("aistack", "doctor").CombinedOutput(); err == nil {
-		addBytesToTar(tw, out, "report/doctor.txt")
+		_ = addBytesToTar(tw, out, "report/doctor.txt")
 	}
 
 	// Docker version
 	if out, err := exec.Command("docker", "version").Output(); err == nil {
-		addBytesToTar(tw, out, "report/docker-version.txt")
+		_ = addBytesToTar(tw, out, "report/docker-version.txt")
 	}
 
-	// Compose config (redacted)
+	// Compose config
 	composeFiles := buildComposeArgs()
-	configArgs := append(append([]string{"compose"}, composeFiles...), "config")
+	configArgs := make([]string, 0, len(composeFiles)+2)
+	configArgs = append(configArgs, "compose")
+	configArgs = append(configArgs, composeFiles...)
+	configArgs = append(configArgs, "config")
 	if out, err := exec.Command("docker", configArgs...).Output(); err == nil {
-		addBytesToTar(tw, out, "report/compose-config.yml")
+		_ = addBytesToTar(tw, out, "report/compose-config.yml")
 	}
 
 	// Service status
-	statusArgs := append(append([]string{"compose"}, buildComposeArgs()...), "ps")
+	cf2 := buildComposeArgs()
+	statusArgs := make([]string, 0, len(cf2)+2)
+	statusArgs = append(statusArgs, "compose")
+	statusArgs = append(statusArgs, cf2...)
+	statusArgs = append(statusArgs, "ps")
 	if out, err := exec.Command("docker", statusArgs...).Output(); err == nil {
-		addBytesToTar(tw, out, "report/services-status.txt")
+		_ = addBytesToTar(tw, out, "report/services-status.txt")
 	}
 
-	// Recent logs (no sensitive data)
-	logsArgs := append(append([]string{"compose"}, buildComposeArgs()...), "logs", "--tail=100")
+	// Recent logs
+	cf3 := buildComposeArgs()
+	logsArgs := make([]string, 0, len(cf3)+3)
+	logsArgs = append(logsArgs, "compose")
+	logsArgs = append(logsArgs, cf3...)
+	logsArgs = append(logsArgs, "logs", "--tail=100")
 	if out, err := exec.Command("docker", logsArgs...).Output(); err == nil {
-		addBytesToTar(tw, out, "report/recent-logs.txt")
+		_ = addBytesToTar(tw, out, "report/recent-logs.txt")
 	}
 
 	// nvidia-smi
 	if out, err := exec.Command("nvidia-smi").Output(); err == nil {
-		addBytesToTar(tw, out, "report/nvidia-smi.txt")
+		_ = addBytesToTar(tw, out, "report/nvidia-smi.txt")
 	}
 }
 

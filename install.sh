@@ -15,7 +15,7 @@ AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
 AISTACK_STATE_DIR="/var/lib/aistack"
-GITHUB_REPO="workhubonline-soft/aistack"
+GITHUB_REPO="your-org/aistack"
 BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${AISTACK_VERSION}/aistack-linux-amd64"
 
 # Colors
@@ -32,26 +32,27 @@ AUTO_YES=false
 PROFILE=""
 NO_MODEL_DOWNLOAD=false
 
-for arg in "$@"; do
-  case $arg in
-    --yes)           AUTO_YES=true ;;
-    --profile=*)     PROFILE="${arg#*=}" ;;
-    --profile)       shift; PROFILE="${1:-}" ;;
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --yes)               AUTO_YES=true ;;
+    --profile=*)         PROFILE="${1#*=}" ;;
+    --profile)           shift; PROFILE="${1:-}" ;;
     --no-model-download) NO_MODEL_DOWNLOAD=true ;;
   esac
+  shift
 done
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
-log()     { echo -e "${GREEN}[✓]${NC} $*"; }
-info()    { echo -e "${BLUE}[→]${NC} $*"; }
-warn()    { echo -e "${YELLOW}[!]${NC} $*"; }
-error()   { echo -e "${RED}[✗]${NC} $*" >&2; }
-header()  { echo -e "\n${BOLD}${CYAN}$*${NC}"; echo "────────────────────────────────────────"; }
+log()     { printf "${GREEN}[✓]${NC} %s\n" "$*"; }
+info()    { printf "${BLUE}[→]${NC} %s\n" "$*"; }
+warn()    { printf "${YELLOW}[!]${NC} %s\n" "$*"; }
+error()   { printf "${RED}[✗]${NC} %s\n" "$*" >&2; }
+header()  { printf "\n${BOLD}${CYAN}%s${NC}\n" "$*"; printf '%s\n' "────────────────────────────────────────"; }
 die()     { error "$*"; exit 1; }
 
 confirm() {
   if $AUTO_YES; then return 0; fi
-  read -rp "$(echo -e "${YELLOW}[?]${NC} $* [y/N]: ")" answer
+  read -rp "$(printf "${YELLOW}[?]${NC} %s [y/N]: " "$*")" answer
   [[ "$answer" =~ ^[Yy]$ ]]
 }
 
@@ -63,7 +64,7 @@ require_root() {
 
 # ── Banner ────────────────────────────────────────────────────────────────────
 print_banner() {
-  echo -e "${CYAN}"
+  printf "${CYAN}"
   cat << 'EOF'
    █████╗ ██╗    ███████╗████████╗ █████╗  ██████╗██╗  ██╗
   ██╔══██╗██║    ██╔════╝╚══██╔══╝██╔══██╗██╔════╝██║ ██╔╝
@@ -72,9 +73,9 @@ print_banner() {
   ██║  ██║██║    ███████║   ██║   ██║  ██║╚██████╗██║  ██╗
   ╚═╝  ╚═╝╚═╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
 EOF
-  echo -e "${NC}"
-  echo -e "  ${BOLD}Self-hosted AI Stack Installer${NC} — v${AISTACK_VERSION}"
-  echo -e "  Ubuntu 22.04 / 24.04 · CPU & NVIDIA GPU\n"
+  printf "${NC}\n"
+  printf "  ${BOLD}Self-hosted AI Stack Installer${NC} — v%s\n" "${AISTACK_VERSION}"
+  printf "  Ubuntu 22.04 / 24.04 · CPU & NVIDIA GPU\n\n"
 }
 
 # ── OS Check ──────────────────────────────────────────────────────────────────
@@ -339,22 +340,22 @@ run_aistack() {
 # ── Summary ───────────────────────────────────────────────────────────────────
 print_summary() {
   header "Installation Complete"
-  echo ""
-  echo -e "  ${GREEN}${BOLD}AIStack is running!${NC}"
-  echo ""
-  echo -e "  ${BOLD}Services:${NC}"
-  echo -e "    • Open WebUI:  ${CYAN}http://localhost:3000${NC}"
-  echo -e "    • Ollama API:  ${CYAN}http://localhost:11434${NC}"
-  echo ""
-  echo -e "  ${BOLD}Useful commands:${NC}"
-  echo -e "    aistack status          — check services"
-  echo -e "    aistack doctor          — run diagnostics"
-  echo -e "    aistack models list     — available models"
-  echo -e "    aistack models recommend — recommendations for your hardware"
-  echo -e "    aistack logs            — view logs"
-  echo ""
-  echo -e "  ${BOLD}Logs:${NC} ${AISTACK_LOG_DIR}/"
-  echo ""
+  printf "\n"
+  printf "  ${GREEN}${BOLD}AIStack is running!${NC}\n"
+  printf "\n"
+  printf "  ${BOLD}Services:${NC}\n"
+  printf "    • Open WebUI:  ${CYAN}http://localhost:3000${NC}\n"
+  printf "    • Ollama API:  ${CYAN}http://localhost:11434${NC}\n"
+  printf "\n"
+  printf "  ${BOLD}Useful commands:${NC}\n"
+  printf "    aistack status          — check services\n"
+  printf "    aistack doctor          — run diagnostics\n"
+  printf "    aistack models list     — available models\n"
+  printf "    aistack models recommend — recommendations for your hardware\n"
+  printf "    aistack logs            — view logs\n"
+  printf "\n"
+  printf "  ${BOLD}Logs:${NC} %s/\n" "${AISTACK_LOG_DIR}"
+  printf "\n"
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
