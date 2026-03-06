@@ -6,8 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/workhubonline-soft/aistack/internal/hardware"
 	"gopkg.in/yaml.v3"
+
+	"github.com/workhubonline-soft/aistack/internal/hardware"
 )
 
 // ── Compatibility levels ───────────────────────────────────────────────────────

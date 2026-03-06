@@ -63,16 +63,16 @@ func Detect() (*Info, error) {
 	info := &Info{}
 
 	if err := info.detectOS(); err != nil {
-		return nil, fmt.Errorf("OS detection: %w", err)
+		return nil, fmt.Errorf("os detection: %w", err)
 	}
 	if err := info.detectCPU(); err != nil {
-		return nil, fmt.Errorf("CPU detection: %w", err)
+		return nil, fmt.Errorf("cpu detection: %w", err)
 	}
 	if err := info.detectRAM(); err != nil {
-		return nil, fmt.Errorf("RAM detection: %w", err)
+		return nil, fmt.Errorf("ram detection: %w", err)
 	}
 	if err := info.detectDisk(); err != nil {
-		return nil, fmt.Errorf("Disk detection: %w", err)
+		return nil, fmt.Errorf("disk detection: %w", err)
 	}
 	// GPU detection is best-effort
 	info.detectGPUs()
@@ -86,7 +86,7 @@ func (h *Info) detectOS() error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -228,13 +228,13 @@ func (h *Info) MinGPUVRAM() int {
 	if !h.HasGPU {
 		return 0
 	}
-	min := h.GPUs[0].VRAMMiB
+	minVRAM := h.GPUs[0].VRAMMiB
 	for _, g := range h.GPUs {
-		if g.VRAMMiB < min {
-			min = g.VRAMMiB
+		if g.VRAMMiB < minVRAM {
+			minVRAM = g.VRAMMiB
 		}
 	}
-	return min
+	return minVRAM
 }
 
 // TotalGPUVRAM returns total VRAM across all GPUs

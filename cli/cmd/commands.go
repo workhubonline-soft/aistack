@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -96,7 +95,7 @@ func checkSystemRequirements() error {
 		lines := strings.Split(strings.TrimSpace(string(out)), "\n")
 		if len(lines) >= 2 {
 			var free int
-			fmt.Sscanf(strings.TrimSpace(lines[1]), "%dG", &free)
+			_, _ = fmt.Sscanf(strings.TrimSpace(lines[1]), "%dG", &free)
 			if free < 20 {
 				return fmt.Errorf("insufficient disk space: %dGB free, need at least 20GB", free)
 			}
@@ -334,8 +333,8 @@ func newUpdateCmd() *cobra.Command {
 			s.Suffix = "  Pulling latest images"
 			s.Start()
 			composeFiles := buildComposeArgs()
-			pullArgs := make([]string, len(composeFiles))
-			copy(pullArgs, composeFiles)
+			pullArgs := make([]string, 0, len(composeFiles)+1)
+			pullArgs = append(pullArgs, composeFiles...)
 			pullArgs = append(pullArgs, "pull")
 			c := exec.Command("docker", append([]string{"compose"}, pullArgs...)...)
 			c.Dir = composeDir
@@ -394,12 +393,12 @@ func runBackup(outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("creating backup file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	gw := gzip.NewWriter(f)
-	defer gw.Close()
+	defer func() { _ = gw.Close() }()
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() { _ = tw.Close() }()
 
 	for _, step := range steps {
 		s := spinner.New(spinner.CharSets[14], 80*time.Millisecond)
@@ -468,11 +467,11 @@ func runReport(outputPath string) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	gw := gzip.NewWriter(f)
-	defer gw.Close()
+	defer func() { _ = gw.Close() }()
 	tw := tar.NewWriter(gw)
-	defer tw.Close()
+	defer func() { _ = tw.Close() }()
 
 	// Collect: doctor output, versions, compose config, logs
 	collectReportData(tw)
@@ -620,19 +619,4 @@ func addBytesToTar(tw *tar.Writer, data []byte, name string) error {
 	return err
 }
 
-func addDirToTar(tw *tar.Writer, srcDir, destPrefix string) error {
-	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
-			return err
-		}
-		rel, _ := filepath.Rel(srcDir, path)
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return nil
-		}
-		return addBytesToTar(tw, data, filepath.Join(destPrefix, rel))
-	})
-}
-
 // suppress unused import
-var _ = io.Copy

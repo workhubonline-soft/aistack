@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+
 	"github.com/workhubonline-soft/aistack/internal/hardware"
 	"github.com/workhubonline-soft/aistack/internal/models"
 )
@@ -284,12 +285,13 @@ func newModelsPullCmd() *cobra.Command {
 
 				if hw != nil {
 					compat := m.CheckCompatibility(hw)
-					if compat.Level == models.CompatFail {
+					switch compat.Level {
+					case models.CompatFail:
 						color.Red("\n  ✗ Warning: %s\n", compat.Reason)
 						if !yes {
 							return fmt.Errorf("model may not run on your hardware. Use --yes to force")
 						}
-					} else if compat.Level == models.CompatWarn {
+					case models.CompatWarn:
 						color.Yellow("\n  ⚠ %s\n", compat.Reason)
 					}
 				}

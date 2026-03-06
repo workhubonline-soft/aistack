@@ -114,7 +114,7 @@ func TestEstimateVRAM_LargerQuantNeedsMoreVRAM(t *testing.T) {
 	q8 := m.EstimateVRAM("q8_0", ctx)
 	fp16 := m.EstimateVRAM("fp16", ctx)
 
-	if !(q4 < q8 && q8 < fp16) {
+	if q4 >= q8 || q8 >= fp16 {
 		t.Errorf("Expected q4 < q8 < fp16, got q4=%d q8=%d fp16=%d", q4, q8, fp16)
 	}
 }
@@ -126,7 +126,7 @@ func TestEstimateKVCache_ScalesWithContext(t *testing.T) {
 	kv8k := m.EstimateKVCache(8192)
 	kv32k := m.EstimateKVCache(32768)
 
-	if !(kv4k < kv8k && kv8k < kv32k) {
+	if kv4k >= kv8k || kv8k >= kv32k {
 		t.Errorf("KV cache should scale with context: 4k=%d 8k=%d 32k=%d", kv4k, kv8k, kv32k)
 	}
 

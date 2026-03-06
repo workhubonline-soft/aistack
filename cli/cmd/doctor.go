@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+
 	"github.com/workhubonline-soft/aistack/internal/hardware"
 )
 
@@ -42,16 +43,16 @@ func runDoctor(_ bool) error {
 	bold := color.New(color.Bold)
 	cyan := color.New(color.FgCyan, color.Bold)
 
-	cyan.Println("\n╔══════════════════════════════════════════╗")
-	cyan.Println("║         AIStack System Doctor            ║")
-	cyan.Println("╚══════════════════════════════════════════╝")
+	_, _ = cyan.Println("\n╔══════════════════════════════════════════╗")
+	_, _ = cyan.Println("║         AIStack System Doctor            ║")
+	_, _ = cyan.Println("╚══════════════════════════════════════════╝")
 	fmt.Printf("  Checked: %s\n\n", time.Now().Format("2006-01-02 15:04:05"))
 
 	results := make([]CheckResult, 0, 20)
 	var hasFailures bool
 
 	// ── Hardware Detection ──────────────────────────────────────────────────
-	bold.Println("  Hardware")
+	_, _ = bold.Println("  Hardware")
 	hw, err := hardware.Detect()
 	if err != nil {
 		results = append(results, CheckResult{
@@ -94,11 +95,11 @@ func runDoctor(_ bool) error {
 	}
 
 	// ── Docker ──────────────────────────────────────────────────────────────
-	bold.Println("\n  Docker")
+	_, _ = bold.Println("\n  Docker")
 	results = append(results, checkDocker()...)
 
 	// ── GPU ─────────────────────────────────────────────────────────────────
-	bold.Println("\n  NVIDIA GPU")
+	_, _ = bold.Println("\n  NVIDIA GPU")
 	if hw != nil && hw.HasGPU {
 		for _, gpu := range hw.GPUs {
 			results = append(results, CheckResult{
@@ -117,13 +118,13 @@ func runDoctor(_ bool) error {
 	}
 
 	// ── Ports ───────────────────────────────────────────────────────────────
-	bold.Println("\n  Ports")
+	_, _ = bold.Println("\n  Ports")
 	for _, port := range doctorPortList {
 		results = append(results, checkPort(port))
 	}
 
 	// ── Network ─────────────────────────────────────────────────────────────
-	bold.Println("\n  Network")
+	_, _ = bold.Println("\n  Network")
 	results = append(results, checkNetwork()...)
 
 	// ── Render results ──────────────────────────────────────────────────────
@@ -273,7 +274,7 @@ func checkPort(port int) CheckResult {
 			Fix:     fmt.Sprintf("Check what's using port %d: sudo lsof -i :%d", port, port),
 		}
 	}
-	ln.Close()
+	_ = ln.Close()
 	return CheckResult{
 		Name:    fmt.Sprintf("Port %d", port),
 		Status:  "ok",
@@ -311,7 +312,7 @@ func checkNetwork() []CheckResult {
 			Fix:     "Check firewall rules: ufw allow out 443/tcp",
 		})
 	} else {
-		conn.Close()
+		_ = conn.Close()
 		results = append(results, CheckResult{
 			Name:    "Docker Hub",
 			Status:  "ok",
@@ -329,7 +330,7 @@ func checkNetwork() []CheckResult {
 			Fix:     "Model downloads may fail. Check firewall.",
 		})
 	} else {
-		conn2.Close()
+		_ = conn2.Close()
 		results = append(results, CheckResult{
 			Name:    "Ollama Registry",
 			Status:  "ok",
