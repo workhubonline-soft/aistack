@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"os/exec" 
+	"os/exec"
 	"sort"
 	"strings"
 
@@ -133,9 +133,9 @@ func newModelsRecommendCmd() *cobra.Command {
 			fmt.Println()
 
 			categories := []struct {
-				Name   string
-				Tag    string
-				Desc   string
+				Name string
+				Tag  string
+				Desc string
 			}{
 				{"Best General Chat", "chat", "Balanced quality and speed for everyday use"},
 				{"Best Coding", "coding", "Optimized for code generation and review"},
@@ -241,14 +241,14 @@ func newModelsEstimateCmd() *cobra.Command {
 			for _, q := range quants {
 				v := m.EstimateVRAM(q, ctx)
 				var ok string
-			switch {
-			case hw.MinGPUVRAM() > 0 && v <= hw.MinGPUVRAM():
-				ok = color.GreenString("✓")
-			case hw.MinGPUVRAM() == 0:
-				ok = color.CyanString("CPU")
-			default:
-				ok = color.RedString("✗")
-			}
+				switch {
+				case hw.MinGPUVRAM() > 0 && v <= hw.MinGPUVRAM():
+					ok = color.GreenString("✓")
+				case hw.MinGPUVRAM() == 0:
+					ok = color.CyanString("CPU")
+				default:
+					ok = color.RedString("✗")
+				}
 				table.Append([]string{q, fmt.Sprintf("%d MiB", v), qualityLabel(q), ok})
 			}
 			table.Render()

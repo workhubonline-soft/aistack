@@ -48,8 +48,8 @@ func TestFindModel(t *testing.T) {
 	catalog := loadTestCatalog(t)
 
 	tests := []struct {
-		query    string
-		wantNil  bool
+		query   string
+		wantNil bool
 	}{
 		{"llama3.1:8b", false},
 		{"qwen2.5:14b", false},
@@ -159,11 +159,11 @@ func TestCompatibility_CPUOnly(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &Model{
-				ID:           "test",
-				ParamsB:      tt.paramsB,
-				DefaultQuant: tt.quant,
+				ID:              "test",
+				ParamsB:         tt.paramsB,
+				DefaultQuant:    tt.quant,
 				AvailableQuants: []string{tt.quant},
-				DefaultCtx:   4096,
+				DefaultCtx:      4096,
 			}
 			result := m.CheckCompatibilityFull(hw, tt.quant, 4096)
 			if result.Level != tt.want {
@@ -334,21 +334,21 @@ func loadTestCatalog(t *testing.T) *Catalog {
 				ParamsB: 8.0, Engine: "ollama", OllamaTag: "llama3.1:8b",
 				SizeLabel: "8B", DefaultQuant: "q4_K_M",
 				AvailableQuants: []string{"q4_K_M", "q5_K_M", "q8_0"},
-				Tags: []string{"chat", "coding"}, DefaultCtx: 8192, MaxCtx: 131072,
+				Tags:            []string{"chat", "coding"}, DefaultCtx: 8192, MaxCtx: 131072,
 			},
 			{
 				ID: "qwen2.5:14b", Name: "Qwen 2.5 14B", Family: "qwen",
 				ParamsB: 14.0, Engine: "ollama", OllamaTag: "qwen2.5:14b",
 				SizeLabel: "14B", DefaultQuant: "q4_K_M",
 				AvailableQuants: []string{"q4_K_M", "q5_K_M", "q6_K", "q8_0"},
-				Tags: []string{"chat", "coding", "multilingual"}, DefaultCtx: 8192, MaxCtx: 131072,
+				Tags:            []string{"chat", "coding", "multilingual"}, DefaultCtx: 8192, MaxCtx: 131072,
 			},
 			{
 				ID: "deepseek-r1:7b", Name: "DeepSeek R1 7B", Family: "deepseek",
 				ParamsB: 7.0, Engine: "ollama", OllamaTag: "deepseek-r1:7b",
 				SizeLabel: "7B", DefaultQuant: "q4_K_M",
 				AvailableQuants: []string{"q4_K_M", "q5_K_M", "q8_0"},
-				Tags: []string{"chat", "coding", "fast"}, DefaultCtx: 8192, MaxCtx: 65536,
+				Tags:            []string{"chat", "coding", "fast"}, DefaultCtx: 8192, MaxCtx: 65536,
 			},
 		},
 	}

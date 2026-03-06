@@ -49,8 +49,8 @@ type Model struct {
 	VRAMOverrideMiB int `yaml:"vram_mib,omitempty"`
 	RAMOverrideMiB  int `yaml:"ram_mib,omitempty"`
 	// Context
-	MaxCtx      int `yaml:"max_ctx"`
-	DefaultCtx  int `yaml:"default_ctx"`
+	MaxCtx     int `yaml:"max_ctx"`
+	DefaultCtx int `yaml:"default_ctx"`
 }
 
 // ── Catalog loading ────────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ func (c *Catalog) FindModel(id string) *Model {
 }
 
 func (c *Catalog) GetRecommendations(hw *hardware.Info, tag string, limit int) []Model {
-	var candidates []Model
+	candidates := make([]Model, 0, len(c.Models))
 	for _, m := range c.Models {
 		if !m.HasTag(tag) {
 			continue
@@ -275,7 +275,7 @@ func (m *Model) checkGPUCompat(hw *hardware.Info, quant string, ctxLen int) Comp
 	}
 }
 
-func (m *Model) checkCPUCompat(hw *hardware.Info, quant string, ctxLen int) CompatResult {
+func (m *Model) checkCPUCompat(hw *hardware.Info, quant string, _ int) CompatResult {
 	ramNeeded := m.EstimateRAM(quant)
 	ramAvail := int(hw.RAM.FreeMB)
 
@@ -294,8 +294,8 @@ func (m *Model) checkCPUCompat(hw *hardware.Info, quant string, ctxLen int) Comp
 		}
 	default:
 		return CompatResult{
-			Level:  CompatFail,
-			Reason: fmt.Sprintf("Insufficient RAM: need %d MiB, have %d MiB free", ramNeeded, ramAvail),
+			Level:      CompatFail,
+			Reason:     fmt.Sprintf("Insufficient RAM: need %d MiB, have %d MiB free", ramNeeded, ramAvail),
 			Suggestion: "Use a smaller model or add more RAM",
 		}
 	}

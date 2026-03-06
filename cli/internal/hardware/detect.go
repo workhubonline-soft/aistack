@@ -75,7 +75,7 @@ func Detect() (*Info, error) {
 		return nil, fmt.Errorf("Disk detection: %w", err)
 	}
 	// GPU detection is best-effort
-	_ = info.detectGPUs()
+	info.detectGPUs()
 
 	info.selectProfile()
 	return info, nil
@@ -157,10 +157,10 @@ func (h *Info) detectDisk() error {
 	return nil
 }
 
-func (h *Info) detectGPUs() error {
+func (h *Info) detectGPUs() {
 	nvidiaSmi, err := exec.LookPath("nvidia-smi")
 	if err != nil {
-		return nil // No GPU, not an error
+		return // No GPU, not an error
 	}
 
 	query := "index,name,memory.total,driver_version,compute_cap,temperature.gpu"
@@ -169,7 +169,7 @@ func (h *Info) detectGPUs() error {
 		"--format=csv,noheader,nounits",
 	).Output()
 	if err != nil {
-		return nil
+		return
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(string(out)))
@@ -195,7 +195,6 @@ func (h *Info) detectGPUs() error {
 	}
 
 	h.HasGPU = len(h.GPUs) > 0
-	return nil
 }
 
 func (h *Info) selectProfile() {

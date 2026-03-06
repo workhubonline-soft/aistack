@@ -38,7 +38,7 @@ func newDoctorCmd() *cobra.Command {
 	return cmd
 }
 
-func runDoctor(jsonOutput bool) error {
+func runDoctor(_ bool) error {
 	bold := color.New(color.Bold)
 	cyan := color.New(color.FgCyan, color.Bold)
 
@@ -47,7 +47,7 @@ func runDoctor(jsonOutput bool) error {
 	cyan.Println("╚══════════════════════════════════════════╝")
 	fmt.Printf("  Checked: %s\n\n", time.Now().Format("2006-01-02 15:04:05"))
 
-	var results []CheckResult
+	results := make([]CheckResult, 0, 20)
 	var hasFailures bool
 
 	// ── Hardware Detection ──────────────────────────────────────────────────

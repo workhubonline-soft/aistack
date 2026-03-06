@@ -19,12 +19,12 @@ import (
 )
 
 const (
-	aistackDir   = "/opt/aistack"
-	composeDir   = "/opt/aistack/compose"
-	envFile      = "/opt/aistack/.env"
-	stateFile    = "/var/lib/aistack/state.json"
-	logDir       = "/var/log/aistack"
-	backupDir    = "/var/lib/aistack/backups"
+	aistackDir = "/opt/aistack"
+	composeDir = "/opt/aistack/compose"
+	envFile    = "/opt/aistack/.env"
+	stateFile  = "/var/lib/aistack/state.json"
+	logDir     = "/var/log/aistack"
+	backupDir  = "/var/lib/aistack/backups"
 )
 
 // ── install ───────────────────────────────────────────────────────────────────
