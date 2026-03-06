@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"os/exec"
+	"os/exec" 
 	"sort"
 	"strings"
 
@@ -240,14 +240,15 @@ func newModelsEstimateCmd() *cobra.Command {
 			table.SetBorder(false)
 			for _, q := range quants {
 				v := m.EstimateVRAM(q, ctx)
-				ok := ""
-				if hw.MinGPUVRAM() > 0 && v <= hw.MinGPUVRAM() {
-					ok = color.GreenString("✓")
-				} else if hw.MinGPUVRAM() == 0 {
-					ok = color.CyanString("CPU")
-				} else {
-					ok = color.RedString("✗")
-				}
+				var ok string
+			switch {
+			case hw.MinGPUVRAM() > 0 && v <= hw.MinGPUVRAM():
+				ok = color.GreenString("✓")
+			case hw.MinGPUVRAM() == 0:
+				ok = color.CyanString("CPU")
+			default:
+				ok = color.RedString("✗")
+			}
 				table.Append([]string{q, fmt.Sprintf("%d MiB", v), qualityLabel(q), ok})
 			}
 			table.Render()

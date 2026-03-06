@@ -116,7 +116,7 @@ func setupDirectories() error {
 		filepath.Join(aistackDir, "models"),
 	}
 	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := os.MkdirAll(d, 0o755); err != nil {
 			return fmt.Errorf("creating %s: %w", d, err)
 		}
 	}
@@ -130,7 +130,7 @@ func generateConfig() error {
 
 	// Read example config
 	examplePaths := []string{
-		filepath.Join(aistackDir, "configs/env.example"),
+		filepath.Join(aistackDir, "configs", "env.example"),
 		"./configs/env.example",
 	}
 
@@ -157,7 +157,7 @@ func generateConfig() error {
 	hostname, _ := os.Hostname()
 	content = strings.ReplaceAll(content, "AISTACK_HOST_HOSTNAME=", "AISTACK_HOST_HOSTNAME="+hostname)
 
-	return os.WriteFile(envFile, []byte(content), 0600)
+	return os.WriteFile(envFile, []byte(content), 0o600)
 }
 
 func pullDockerImages() error {
@@ -297,7 +297,9 @@ func newLogsCmd() *cobra.Command {
 		Short: "View service logs",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			composeFiles := buildComposeArgs()
-			cmdArgs := append(composeFiles, "logs")
+			cmdArgs := make([]string, len(composeFiles))
+			copy(cmdArgs, composeFiles)
+			cmdArgs = append(cmdArgs, "logs")
 			if follow {
 				cmdArgs = append(cmdArgs, "-f")
 			}
@@ -374,7 +376,7 @@ func runBackup(outputPath string) error {
 		outputPath = filepath.Join(backupDir, fmt.Sprintf("aistack-backup-%s.tar.gz", timestamp))
 	}
 
-	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0o755); err != nil {
 		return err
 	}
 
@@ -582,10 +584,10 @@ func printAccessInfo() {
 }
 
 func saveState(status string) {
-	_ = os.MkdirAll("/var/lib/aistack", 0755)
-	content := fmt.Sprintf(`{"status":"%s","updated_at":"%s"}`,
+	_ = os.MkdirAll("/var/lib/aistack", 0o755)
+	content := fmt.Sprintf(`{"status":%q,"updated_at":%q}`,
 		status, time.Now().Format(time.RFC3339))
-	_ = os.WriteFile(stateFile, []byte(content), 0644)
+	_ = os.WriteFile(stateFile, []byte(content), 0o644)
 }
 
 func generateSecret(length int) (string, error) {
@@ -607,7 +609,7 @@ func addToTar(tw *tar.Writer, srcPath, destPath string) error {
 func addBytesToTar(tw *tar.Writer, data []byte, name string) error {
 	hdr := &tar.Header{
 		Name:    name,
-		Mode:    0644,
+		Mode:    0o644,
 		Size:    int64(len(data)),
 		ModTime: time.Now(),
 	}

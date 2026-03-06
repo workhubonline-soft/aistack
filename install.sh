@@ -86,7 +86,8 @@ check_os() {
     die "Cannot detect OS. /etc/os-release not found."
   fi
 
-  source /etc/os-release
+  # shellcheck source=/dev/null
+  . /etc/os-release
   info "Detected: ${PRETTY_NAME}"
 
   if [[ "$ID" != "ubuntu" ]]; then
@@ -309,10 +310,11 @@ deploy_aistack() {
   mkdir -p "$AISTACK_STATE_DIR"
 
   # If running from git clone, copy compose/configs
-  if [[ -d "$(dirname "$0")/compose" ]]; then
-    cp -r "$(dirname "$0")/compose" "$AISTACK_DIR/"
-    cp -r "$(dirname "$0")/configs" "$AISTACK_DIR/"
-    cp -r "$(dirname "$0")/models" "$AISTACK_DIR/"
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  if [[ -d "${SCRIPT_DIR}/compose" ]]; then
+    cp -r "${SCRIPT_DIR}/compose" "$AISTACK_DIR/"
+    cp -r "${SCRIPT_DIR}/configs" "$AISTACK_DIR/"
+    cp -r "${SCRIPT_DIR}/models" "$AISTACK_DIR/"
     log "Files deployed from local clone"
   fi
 

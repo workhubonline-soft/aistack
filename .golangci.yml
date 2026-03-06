@@ -13,7 +13,7 @@ linters-settings:
     simplify: true
 
   goimports:
-    local-prefixes: github.com/workhubonline-soft/aistack
+    local-prefixes: github.com/your-org/aistack
 
   gocritic:
     enabled-tags:
@@ -51,8 +51,6 @@ linters:
     - unconvert
     - unparam
     - whitespace
-    - wsl
-    - noctx
     - bodyclose
 
   disable:
