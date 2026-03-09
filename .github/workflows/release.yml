@@ -60,7 +60,7 @@ jobs:
               -X 'github.com/workhubonline-soft/aistack/cmd.commit=${COMMIT}' \
               -X 'github.com/workhubonline-soft/aistack/cmd.buildDate=${BUILD_DATE}'" \
             -o ../dist/aistack-${{ matrix.suffix }} \
-            ./...
+            .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
