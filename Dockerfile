@@ -24,7 +24,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
       -X 'github.com/workhubonline-soft/aistack/cmd.commit=${COMMIT}' \
       -X 'github.com/workhubonline-soft/aistack/cmd.buildDate=${BUILD_DATE}'" \
     -o /aistack \
-    ./...
+    .
 
 # Stage 2: Minimal runtime
 FROM alpine:3.19
