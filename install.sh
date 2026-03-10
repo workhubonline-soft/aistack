@@ -15,7 +15,7 @@ AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
 AISTACK_STATE_DIR="/var/lib/aistack"
-GITHUB_REPO="your-org/aistack"
+GITHUB_REPO="workhubonline-soft/aistack"
 BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${AISTACK_VERSION}/aistack-linux-amd64"
 
 # Colors
