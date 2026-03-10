@@ -348,6 +348,9 @@ run_aistack() {
   if $NO_MODEL_DOWNLOAD; then flags="$flags --no-model-download"; fi
 
   "$AISTACK_BIN" install $flags
+  # Fix permissions for non-root usage
+  chmod 644 "${AISTACK_DIR}/.env" 2>/dev/null || true
+  chmod -R 755 "${AISTACK_DIR}" 2>/dev/null || true
   "$AISTACK_BIN" up
 }
 
