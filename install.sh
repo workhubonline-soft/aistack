@@ -3,19 +3,19 @@
 # AIStack Installer — Bootstrap Script
 # Supports: Ubuntu 22.04 LTS, 24.04 LTS (x86_64)
 # Usage:
-#   curl -sSL https://github.com/workhubonline-soft/aistack/releases/download/v0.1.0/install.sh | bash
+#   curl -sSL https://install.example.com/aistack | bash
 #   ./install.sh [--yes] [--profile cpu|gpu] [--no-model-download]
 # ==============================================================================
 
 set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-AISTACK_VERSION="${AISTACK_VERSION:-v0.1.0}"
+AISTACK_VERSION="${AISTACK_VERSION:-0.1.0}"
 AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
 AISTACK_STATE_DIR="/var/lib/aistack"
-GITHUB_REPO="workhubonline-soft/aistack"
+GITHUB_REPO="your-org/aistack"
 BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${AISTACK_VERSION}/aistack-linux-amd64"
 
 # Colors
@@ -293,16 +293,6 @@ install_aistack_binary() {
     info "Updating AIStack CLI: ${current_ver} → ${AISTACK_VERSION}"
   fi
 
-  # If running from local clone with pre-built binary
-  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-  LOCAL_BIN="${SCRIPT_DIR}/aistack-linux-amd64"
-  if [[ -f "$LOCAL_BIN" ]]; then
-    cp "$LOCAL_BIN" "$AISTACK_BIN"
-    chmod +x "$AISTACK_BIN"
-    log "AIStack CLI installed from local binary: $AISTACK_BIN"
-    return 0
-  fi
-
   info "Downloading AIStack CLI binary..."
   curl -fsSL "$BINARY_URL" -o /tmp/aistack-new
   chmod +x /tmp/aistack-new
@@ -326,23 +316,18 @@ deploy_aistack() {
     cp -r "${SCRIPT_DIR}/configs" "$AISTACK_DIR/"
     cp -r "${SCRIPT_DIR}/models" "$AISTACK_DIR/"
     log "Files deployed from local clone"
-  fi
-
-  # Generate .env if not exists
-  if [[ ! -f "${AISTACK_DIR}/.env" ]]; then
-    if [[ -f "${AISTACK_DIR}/configs/env.example" ]]; then
-      cp "${AISTACK_DIR}/configs/env.example" "${AISTACK_DIR}/.env"
-      # Set profile
-      sed -i "s/AISTACK_PROFILE=cpu/AISTACK_PROFILE=${PROFILE}/" "${AISTACK_DIR}/.env"
-      # Generate random secret
-      SECRET=$(tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 32 || true)
-      sed -i "s/CHANGE_ME_RANDOM_SECRET_KEY_32CHARS/${SECRET}/" "${AISTACK_DIR}/.env"
-      log "Config generated: ${AISTACK_DIR}/.env"
-    fi
   else
-    # Update profile in existing .env
-    sed -i "s/AISTACK_PROFILE=.*/AISTACK_PROFILE=${PROFILE}/" "${AISTACK_DIR}/.env"
-    log "Profile updated in .env: ${PROFILE}"
+    # Running via curl — download files from GitHub
+    info "Downloading AIStack configuration files..."
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+    curl -fsSL "https://github.com/${GITHUB_REPO}/archive/refs/tags/v${AISTACK_VERSION}.tar.gz"       -o "${tmp_dir}/aistack.tar.gz"
+    tar -xzf "${tmp_dir}/aistack.tar.gz" -C "${tmp_dir}" --strip-components=1
+    cp -r "${tmp_dir}/compose" "$AISTACK_DIR/"
+    cp -r "${tmp_dir}/configs" "$AISTACK_DIR/"
+    cp -r "${tmp_dir}/models" "$AISTACK_DIR/"
+    rm -rf "${tmp_dir}"
+    log "Files downloaded from GitHub"
   fi
 
   log "AIStack directory: ${AISTACK_DIR}"
@@ -402,7 +387,6 @@ main() {
     install_nvidia_container_toolkit
   fi
 
-  install_aistack_binary
   deploy_aistack
   run_aistack
   print_summary
