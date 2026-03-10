@@ -321,7 +321,7 @@ deploy_aistack() {
     info "Downloading AIStack configuration files..."
     local tmp_dir
     tmp_dir=$(mktemp -d)
-    curl -fsSL "https://github.com/${GITHUB_REPO}/archive/refs/tags/v${AISTACK_VERSION}.tar.gz"       -o "${tmp_dir}/aistack.tar.gz"
+    curl -sSL "https://github.com/${GITHUB_REPO}/archive/refs/tags/v${AISTACK_VERSION}.tar.gz"       -o "${tmp_dir}/aistack.tar.gz"
     tar -xzf "${tmp_dir}/aistack.tar.gz" -C "${tmp_dir}" --strip-components=1
     cp -r "${tmp_dir}/compose" "$AISTACK_DIR/"
     cp -r "${tmp_dir}/configs" "$AISTACK_DIR/"
