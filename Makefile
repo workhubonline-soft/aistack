@@ -11,7 +11,7 @@
 
 # ── Variables ─────────────────────────────────────────────────────────────────
 BINARY_NAME    := aistack
-MODULE         := github.com/your-org/aistack
+MODULE         := github.com/workhubonline-soft/aistack
 CLI_DIR        := ./cli
 BUILD_DIR      := ./dist
 INSTALL_PATH   := /usr/local/bin/aistack
@@ -23,9 +23,9 @@ BUILD_DATE     := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Go build flags
 LDFLAGS := -s -w \
-	-X 'github.com/your-org/aistack/cmd.version=$(VERSION)' \
-	-X 'github.com/your-org/aistack/cmd.commit=$(COMMIT)' \
-	-X 'github.com/your-org/aistack/cmd.buildDate=$(BUILD_DATE)'
+	-X 'github.com/workhubonline-soft/aistack/cmd.version=$(VERSION)' \
+	-X 'github.com/workhubonline-soft/aistack/cmd.commit=$(COMMIT)' \
+	-X 'github.com/workhubonline-soft/aistack/cmd.buildDate=$(BUILD_DATE)'
 
 GOFLAGS := -trimpath
 
@@ -186,8 +186,8 @@ docker-build: ## Build Docker image for CLI
 
 .PHONY: docker-push
 docker-push: docker-build ## Push Docker image to registry
-	@docker push ghcr.io/your-org/aistack:$(VERSION)
-	@docker push ghcr.io/your-org/aistack:latest
+	@docker push ghcr.io/workhubonline-soft/aistack:$(VERSION)
+	@docker push ghcr.io/workhubonline-soft/aistack:latest
 
 # ── Dev ───────────────────────────────────────────────────────────────────────
 .PHONY: dev
