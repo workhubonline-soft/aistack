@@ -3,7 +3,7 @@
 # AIStack Installer — Bootstrap Script
 # Supports: Ubuntu 22.04 LTS, 24.04 LTS (x86_64)
 # Usage:
-#   curl -sSL https://install.example.com/aistack | bash
+#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.0/install.sh | bash
 #   ./install.sh [--yes] [--profile cpu|gpu] [--no-model-download]
 # ==============================================================================
 
