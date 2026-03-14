@@ -180,7 +180,7 @@ sudo rm -rf /opt/aistack /var/lib/aistack /var/log/aistack
 sudo rm -f /usr/local/bin/aistack
 
 # Re-install
-curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.0/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.1/install.sh | sudo bash
 ```
 
 ---

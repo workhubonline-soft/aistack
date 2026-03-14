@@ -19,7 +19,7 @@
 
 ### One-liner install
 ```bash
-curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.0/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.1/install.sh | sudo bash
 ```
 
 ### From source
