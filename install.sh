@@ -390,6 +390,7 @@ main() {
     install_nvidia_container_toolkit
   fi
 
+  install_aistack_binary
   deploy_aistack
   run_aistack
   print_summary
