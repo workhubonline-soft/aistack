@@ -16,7 +16,7 @@ AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
 AISTACK_STATE_DIR="/var/lib/aistack"
 GITHUB_REPO="workhubonline-soft/aistack"
-BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${AISTACK_VERSION}/aistack-linux-amd64"
+BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/v${AISTACK_VERSION}/aistack-linux-amd64"
 
 # Colors
 RED='\033[0;31m'
@@ -294,7 +294,7 @@ install_aistack_binary() {
   fi
 
   info "Downloading AIStack CLI binary..."
-  curl -fsSL "$BINARY_URL" -o /tmp/aistack-new
+  curl -sSL "$BINARY_URL" -o /tmp/aistack-new
   chmod +x /tmp/aistack-new
   mv /tmp/aistack-new "$AISTACK_BIN"
   log "AIStack CLI installed: $AISTACK_BIN"
