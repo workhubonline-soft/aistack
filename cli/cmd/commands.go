@@ -207,13 +207,12 @@ func runUp(monitoring, nginx bool) error {
 
 	composeArgs := make([]string, len(composeFiles))
 	copy(composeArgs, composeFiles)
-	composeArgs = append(composeArgs, "up", "-d", "--remove-orphans")
-	if len(profiles) > 0 {
-		composeArgs = append([]string{"--profile", strings.Join(profiles, ",")}, composeArgs...)
+	for _, p := range profiles {
+		composeArgs = append(composeArgs, "--profile", p)
 	}
-	args := composeArgs
+	composeArgs = append(composeArgs, "up", "-d", "--remove-orphans")
 
-	cmd := exec.Command("docker", append([]string{"compose"}, args...)...)
+	cmd := exec.Command("docker", append([]string{"compose"}, composeArgs...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Dir = composeDir
@@ -619,4 +618,3 @@ func addBytesToTar(tw *tar.Writer, data []byte, name string) error {
 	return err
 }
 
-// suppress unused import

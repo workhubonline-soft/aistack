@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"os/exec"
 	"sort"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 
 	"github.com/workhubonline-soft/aistack/internal/hardware"
 	"github.com/workhubonline-soft/aistack/internal/models"
+	"github.com/workhubonline-soft/aistack/internal/ollama"
 )
 
 func newModelsCmd() *cobra.Command {
@@ -308,31 +308,100 @@ func newModelsPullCmd() *cobra.Command {
 			color.Cyan("\n  Pulling model: %s\n", ollamaID)
 			fmt.Printf("  This may take a while depending on your connection speed.\n\n")
 
-			pullCmd := exec.Command("docker", "exec", "aistack-ollama",
-				"ollama", "pull", ollamaID)
-			pullCmd.Stdout = os.Stdout
-			pullCmd.Stderr = os.Stderr
-			return pullCmd.Run()
+			client := ollama.NewClient(ollamaBaseURL())
+			if err := client.Ping(); err != nil {
+				return fmt.Errorf("cannot reach Ollama: %w\n  Is AIStack running? Try: aistack up", err)
+			}
+
+			var lastStatus string
+			return client.Pull(ollamaID, func(p ollama.PullProgress) {
+				if p.Total > 0 {
+					pct := float64(p.Completed) / float64(p.Total) * 100
+					fmt.Printf("\r  %s  %.1f%%", p.Status, pct)
+				} else if p.Status != lastStatus {
+					if lastStatus != "" {
+						fmt.Println()
+					}
+					fmt.Printf("  %s", p.Status)
+					lastStatus = p.Status
+				}
+			})
 		},
 	}
 }
 
 // ── models benchmark ──────────────────────────────────────────────────────────
 func newModelsBenchmarkCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "benchmark",
+	var modelID string
+
+	cmd := &cobra.Command{
+		Use:   "benchmark [model]",
 		Short: "Quick performance benchmark (tokens/sec)",
+		Example: `  aistack models benchmark llama3.2:3b
+  aistack models benchmark --model qwen2.5:7b`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			color.Cyan("\n  Quick Benchmark\n")
-			fmt.Println("  Running a quick inference test to measure tokens/sec...")
-			fmt.Println("  (Requires a model to be already loaded in Ollama)")
+			if modelID == "" && len(args) > 0 {
+				modelID = args[0]
+			}
+
+			client := ollama.NewClient(ollamaBaseURL())
+			if err := client.Ping(); err != nil {
+				return fmt.Errorf("cannot reach Ollama: %w\n  Is AIStack running? Try: aistack up", err)
+			}
+
+			// If no model specified, pick the first loaded one
+			if modelID == "" {
+				loaded, err := client.List()
+				if err != nil {
+					return fmt.Errorf("listing models: %w", err)
+				}
+				if len(loaded) == 0 {
+					return fmt.Errorf("no models loaded. Pull one first: aistack models pull llama3.2:3b")
+				}
+				modelID = loaded[0].Name
+			}
+
+			color.Cyan("\n  Benchmark: %s\n", modelID)
+			fmt.Println("  Sending test prompt...")
 			fmt.Println()
-			// TODO: Implement actual benchmark via Ollama API
-			color.Yellow("  Benchmark feature coming in next update.")
-			fmt.Println("  For now, use: curl http://localhost:11434/api/generate ...")
+
+			const testPrompt = "Explain what a binary search tree is in exactly three sentences."
+			resp, err := client.Generate(modelID, testPrompt)
+			if err != nil {
+				return fmt.Errorf("benchmark failed: %w", err)
+			}
+
+			totalSec := float64(resp.TotalDuration) / 1e9
+			evalSec := float64(resp.EvalDuration) / 1e9
+			promptSec := float64(resp.PromptEvalDuration) / 1e9
+
+			tokPerSec := 0.0
+			if evalSec > 0 {
+				tokPerSec = float64(resp.EvalCount) / evalSec
+			}
+			promptTokPerSec := 0.0
+			if promptSec > 0 {
+				promptTokPerSec = float64(resp.PromptEvalCount) / promptSec
+			}
+
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Metric", "Value"})
+			table.SetBorder(false)
+			table.SetAlignment(tablewriter.ALIGN_LEFT)
+			table.Append([]string{"Model", modelID})
+			table.Append([]string{"Prompt tokens", fmt.Sprintf("%d", resp.PromptEvalCount)})
+			table.Append([]string{"Generated tokens", fmt.Sprintf("%d", resp.EvalCount)})
+			table.Append([]string{"Prompt eval", fmt.Sprintf("%.1f tok/s", promptTokPerSec)})
+			table.Append([]string{"Generation speed", fmt.Sprintf("%.1f tok/s", tokPerSec)})
+			table.Append([]string{"Total time", fmt.Sprintf("%.2fs", totalSec)})
+			table.Render()
+			fmt.Println()
+
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&modelID, "model", "m", "", "Model to benchmark (default: first loaded)")
+	return cmd
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -391,6 +460,13 @@ func printVerdict(compat models.CompatResult) {
 			fmt.Printf("    Suggestion: %s\n", compat.Suggestion)
 		}
 	}
+}
+
+func ollamaBaseURL() string {
+	if v := os.Getenv("OLLAMA_HOST"); v != "" {
+		return "http://" + v
+	}
+	return "http://localhost:11434"
 }
 
 func qualityLabel(quant string) string {

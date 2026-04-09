@@ -3,14 +3,14 @@
 # AIStack Installer — Bootstrap Script
 # Supports: Ubuntu 22.04 LTS, 24.04 LTS (x86_64)
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.1/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.0.0/install.sh | bash
 #   ./install.sh [--yes] [--profile cpu|gpu] [--no-model-download]
 # ==============================================================================
 
 set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-AISTACK_VERSION="${AISTACK_VERSION:-0.1.0}"
+AISTACK_VERSION="${AISTACK_VERSION:-2.0.0}"
 AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
@@ -74,7 +74,7 @@ print_banner() {
   ╚═╝  ╚═╝╚═╝    ╚══════╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
 EOF
   printf "${NC}\n"
-  printf "  ${BOLD}Self-hosted AI Stack Installer${NC} — v%s\n" "${AISTACK_VERSION}"
+  printf "  ${BOLD}Self-Hosted AI Stack Installer${NC} — v%s\n" "${AISTACK_VERSION}"
   printf "  Ubuntu 22.04 / 24.04 · CPU & NVIDIA GPU\n\n"
 }
 
@@ -114,7 +114,7 @@ check_os() {
 install_base_deps() {
   header "Installing Base Dependencies"
 
-  local deps=(curl wget git jq ca-certificates gnupg lsb-release apt-transport-https)
+  local deps=(curl ca-certificates)
   local missing=()
 
   for dep in "${deps[@]}"; do
@@ -162,10 +162,11 @@ install_docker() {
     gpg --dearmor -o /etc/apt/keyrings/docker.gpg
   chmod a+r /etc/apt/keyrings/docker.gpg
 
+  # Use VERSION_CODENAME from /etc/os-release (already sourced) instead of lsb_release
   echo "deb [arch=$(dpkg --print-architecture) \
     signed-by=/etc/apt/keyrings/docker.gpg] \
     https://download.docker.com/linux/ubuntu \
-    $(lsb_release -cs) stable" | \
+    ${VERSION_CODENAME} stable" | \
     tee /etc/apt/sources.list.d/docker.list > /dev/null
 
   apt-get update -qq

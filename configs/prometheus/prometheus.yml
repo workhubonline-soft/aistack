@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Ollama health probe — checks /api/tags returns 200
+  - job_name: "ollama"
+    metrics_path: /api/tags
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["ollama:11434"]
+        labels:
+          service: "ollama"
+
+  # Open WebUI health probe
+  - job_name: "openwebui"
+    metrics_path: /health
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["openwebui:8080"]
+        labels:
+          service: "openwebui"

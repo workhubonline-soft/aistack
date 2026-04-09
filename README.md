@@ -13,13 +13,13 @@
 | **Open WebUI** | `http://your-server:3000` | ChatGPT-like interface |
 | **Ollama** | `http://localhost:11434` | LLM inference engine |
 | **Nginx** *(optional)* | `http://your-server:80` | Reverse proxy |
-| **Prometheus + Grafana** *(optional)* | `:9090` / `:3001` | Monitoring |
+| **Prometheus + Grafana** *(optional)* | `:9090` / `:3001` | Service health monitoring |
 
 ## Quick Start
 
 ### One-liner install
 ```bash
-curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v0.1.1/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.0.0/install.sh | sudo bash
 ```
 
 ### From source
@@ -75,6 +75,9 @@ aistack models estimate --model llama3.1:70b --ctx 4096 --quant q4_K_M
 # Download a model
 aistack models pull qwen2.5:7b
 aistack models pull llama3.2:3b
+
+# Benchmark a loaded model (tokens/sec)
+aistack models benchmark llama3.2:3b
 ```
 
 ### Example Recommendations by Hardware
@@ -153,16 +156,19 @@ docker run --rm -v aistack-openwebui-data:/data -v $(pwd):/restore \
 
 ```
 /opt/aistack/
-  compose/          Docker Compose files
-  configs/          Nginx, Prometheus, Grafana configs
-  models/           Model catalog (catalog.yaml)
-  .env              Your configuration (auto-generated)
+  compose/              Docker Compose files (base, cpu, nvidia)
+  configs/
+    nginx/              Reverse proxy config
+    prometheus/         Prometheus scrape config
+    grafana/            Grafana datasources + dashboards
+  models/               Model catalog (catalog.yaml)
+  .env                  Your configuration (auto-generated)
 
 /var/lib/aistack/
-  state.json        Installer state
-  backups/          Backup archives
+  state.json            Installer state
+  backups/              Backup archives
 
-/var/log/aistack/   Logs
+/var/log/aistack/       Logs
 /usr/local/bin/aistack  CLI binary
 ```
 
@@ -192,12 +198,18 @@ aistack up --monitoring
 aistack up --nginx --monitoring
 ```
 
+**Monitoring** includes a pre-configured Grafana dashboard at `http://localhost:3001` (login: admin / aistack) showing:
+- Ollama and Open WebUI service health (up/down)
+- Response time tracking
+- Service availability history
+
 ## Troubleshooting
 
-See [docs/troubleshooting.md](docs/troubleshooting.md)
-
 ```bash
-# Generate support report
+# Run diagnostics
+aistack doctor
+
+# Generate support report (attach to GitHub issues)
 aistack report
 # → /tmp/aistack-report-20250101-120000.tar.gz
 ```
