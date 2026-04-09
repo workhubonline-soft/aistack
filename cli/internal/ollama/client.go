@@ -12,20 +12,20 @@ import (
 
 const defaultBaseURL = "http://localhost:11434"
 
+// Client communicates with the Ollama REST API.
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
 }
 
+// NewClient creates an Ollama API client. Pass "" to use http://localhost:11434.
 func NewClient(baseURL string) *Client {
 	if baseURL == "" {
 		baseURL = defaultBaseURL
 	}
 	return &Client{
-		baseURL: baseURL,
-		httpClient: &http.Client{
-			Timeout: 0, // no timeout for streaming
-		},
+		baseURL:    baseURL,
+		httpClient: &http.Client{},
 	}
 }
 
@@ -39,7 +39,11 @@ type PullProgress struct {
 
 // Pull downloads a model, calling progressFn for each status update.
 func (c *Client) Pull(model string, progressFn func(PullProgress)) error {
-	body, _ := json.Marshal(map[string]string{"name": model})
+	body, err := json.Marshal(map[string]string{"name": model})
+	if err != nil {
+		return fmt.Errorf("encoding request: %w", err)
+	}
+
 	resp, err := c.httpClient.Post(c.baseURL+"/api/pull", "application/json", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("connecting to Ollama at %s: %w", c.baseURL, err)
@@ -47,7 +51,7 @@ func (c *Client) Pull(model string, progressFn func(PullProgress)) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(resp.Body)
+		msg, _ := io.ReadAll(resp.Body) //nolint:errcheck // best-effort error body
 		return fmt.Errorf("ollama pull failed (HTTP %d): %s", resp.StatusCode, string(msg))
 	}
 
@@ -82,7 +86,7 @@ func (c *Client) List() ([]Model, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(resp.Body)
+		msg, _ := io.ReadAll(resp.Body) //nolint:errcheck // best-effort error body
 		return nil, fmt.Errorf("ollama list failed (HTTP %d): %s", resp.StatusCode, string(msg))
 	}
 
@@ -115,12 +119,16 @@ type GenerateResponse struct {
 
 // Generate sends a prompt and returns the full response (non-streaming).
 func (c *Client) Generate(model, prompt string) (*GenerateResponse, error) {
-	body, _ := json.Marshal(GenerateRequest{
+	body, err := json.Marshal(GenerateRequest{
 		Model:  model,
 		Prompt: prompt,
 		Stream: false,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("encoding request: %w", err)
+	}
 
+	// Use a separate client with a generous timeout for generation.
 	client := &http.Client{Timeout: 5 * time.Minute}
 	resp, err := client.Post(c.baseURL+"/api/generate", "application/json", bytes.NewReader(body))
 	if err != nil {
@@ -129,7 +137,7 @@ func (c *Client) Generate(model, prompt string) (*GenerateResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(resp.Body)
+		msg, _ := io.ReadAll(resp.Body) //nolint:errcheck // best-effort error body
 		return nil, fmt.Errorf("ollama generate failed (HTTP %d): %s", resp.StatusCode, string(msg))
 	}
 
@@ -147,7 +155,8 @@ func (c *Client) Ping() error {
 	if err != nil {
 		return fmt.Errorf("Ollama is not reachable at %s: %w", c.baseURL, err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Ollama returned HTTP %d", resp.StatusCode)
 	}
