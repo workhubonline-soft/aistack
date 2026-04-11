@@ -14,8 +14,10 @@ const defaultBaseURL = "http://localhost:11434"
 
 // Client communicates with the Ollama REST API.
 type Client struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL      string
+	httpClient   *http.Client // default 30s timeout for quick requests
+	streamClient *http.Client // no timeout for streaming (pull)
+	longClient   *http.Client // 5min timeout for generation
 }
 
 // NewClient creates an Ollama API client. Pass "" to use http://localhost:11434.
@@ -24,8 +26,10 @@ func NewClient(baseURL string) *Client {
 		baseURL = defaultBaseURL
 	}
 	return &Client{
-		baseURL:    baseURL,
-		httpClient: &http.Client{},
+		baseURL:      baseURL,
+		httpClient:   &http.Client{Timeout: 30 * time.Second},
+		streamClient: &http.Client{},
+		longClient:   &http.Client{Timeout: 5 * time.Minute},
 	}
 }
 
@@ -44,7 +48,7 @@ func (c *Client) Pull(model string, progressFn func(PullProgress)) error {
 		return fmt.Errorf("encoding request: %w", err)
 	}
 
-	resp, err := c.httpClient.Post(c.baseURL+"/api/pull", "application/json", bytes.NewReader(body))
+	resp, err := c.streamClient.Post(c.baseURL+"/api/pull", "application/json", bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("connecting to Ollama at %s: %w", c.baseURL, err)
 	}
@@ -128,9 +132,7 @@ func (c *Client) Generate(model, prompt string) (*GenerateResponse, error) {
 		return nil, fmt.Errorf("encoding request: %w", err)
 	}
 
-	// Use a separate client with a generous timeout for generation.
-	client := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := client.Post(c.baseURL+"/api/generate", "application/json", bytes.NewReader(body))
+	resp, err := c.longClient.Post(c.baseURL+"/api/generate", "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Ollama at %s: %w", c.baseURL, err)
 	}
@@ -150,8 +152,7 @@ func (c *Client) Generate(model, prompt string) (*GenerateResponse, error) {
 
 // Ping checks if Ollama is reachable.
 func (c *Client) Ping() error {
-	client := &http.Client{Timeout: 5 * time.Second}
-	resp, err := client.Get(c.baseURL + "/api/tags")
+	resp, err := c.httpClient.Get(c.baseURL + "/api/tags")
 	if err != nil {
 		return fmt.Errorf("Ollama is not reachable at %s: %w", c.baseURL, err)
 	}

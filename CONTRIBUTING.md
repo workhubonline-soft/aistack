@@ -98,7 +98,7 @@ Releases are fully automated via GitHub Actions.
    - Updates `install.sh` with new version pointer
 
 ### Version naming:
-- `v2.0.0` — stable release
+- `v2.1.0` — stable release
 - `v2.1.0-rc1` — release candidate (marked as pre-release)
 - `v2.1.0-beta1` — beta (marked as pre-release)
 

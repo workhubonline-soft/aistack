@@ -190,6 +190,9 @@ func newModelsEstimateCmd() *cobra.Command {
 			if modelID == "" {
 				return fmt.Errorf("specify model with --model or as argument")
 			}
+			if ctx < 128 || ctx > 131072 {
+				return fmt.Errorf("context length must be between 128 and 131072 (got %d)", ctx)
+			}
 
 			catalog, err := models.LoadCatalog(catalogPath())
 			if err != nil {
@@ -464,7 +467,12 @@ func printVerdict(compat models.CompatResult) {
 
 func ollamaBaseURL() string {
 	if v := os.Getenv("OLLAMA_HOST"); v != "" {
-		return "http://" + v
+		// Accept host:port or just host format
+		if !strings.Contains(v, "/") {
+			return "http://" + v
+		}
+		// Already a full URL or contains path — use as-is if valid
+		return v
 	}
 	return "http://localhost:11434"
 }

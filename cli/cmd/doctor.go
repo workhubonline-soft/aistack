@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -39,7 +40,97 @@ func newDoctorCmd() *cobra.Command {
 	return cmd
 }
 
-func runDoctor(_ bool) error {
+func runDoctor(jsonOutput bool) error {
+	hw, _ := hardware.Detect()
+	results := collectDoctorResults(hw)
+
+	if jsonOutput {
+		return renderDoctorJSON(results)
+	}
+	return renderDoctorTable(hw, results)
+}
+
+func collectDoctorResults(hw *hardware.Info) []CheckResult {
+	results := make([]CheckResult, 0, 20)
+	results = append(results, checkHardware(hw)...)
+	results = append(results, checkDocker()...)
+	results = append(results, checkGPU(hw)...)
+	for _, port := range doctorPortList {
+		results = append(results, checkPort(port))
+	}
+	results = append(results, checkNetwork()...)
+	return results
+}
+
+func checkHardware(hw *hardware.Info) []CheckResult {
+	if hw == nil {
+		return []CheckResult{{Name: "Hardware Detection", Status: "warn", Message: "Detection failed"}}
+	}
+	results := []CheckResult{
+		{Name: "OS", Status: osCheckStatus(hw),
+			Message: fmt.Sprintf("%s (kernel: %s, arch: %s)", hw.OS.PrettyName, hw.OS.KernelVer, hw.OS.Arch)},
+		{Name: "CPU", Status: "ok",
+			Message: fmt.Sprintf("%s — %d cores / %d threads", hw.CPU.Model, hw.CPU.Cores, hw.CPU.Threads)},
+	}
+	ramStatus := "ok"
+	if hw.RAM.TotalMB < 8192 {
+		ramStatus = "warn"
+	}
+	results = append(results, CheckResult{
+		Name: "RAM", Status: ramStatus,
+		Message: fmt.Sprintf("Total: %d MB / Free: %d MB", hw.RAM.TotalMB, hw.RAM.FreeMB),
+		Fix:     ifStr(ramStatus == "warn", "Minimum 8GB RAM recommended for CPU inference"),
+	})
+	diskStatus := "ok"
+	if hw.Disk.FreeGB < 20 {
+		diskStatus = "fail"
+	} else if hw.Disk.FreeGB < 50 {
+		diskStatus = "warn"
+	}
+	results = append(results, CheckResult{
+		Name: "Disk Space", Status: diskStatus,
+		Message: fmt.Sprintf("Free: %d GB / Total: %d GB", hw.Disk.FreeGB, hw.Disk.TotalGB),
+		Fix:     ifStr(diskStatus != "ok", "Free at least 50GB for models and container images"),
+	})
+	return results
+}
+
+func checkGPU(hw *hardware.Info) []CheckResult {
+	if hw == nil || !hw.HasGPU {
+		return []CheckResult{{Name: "NVIDIA GPU", Status: "info", Message: "No NVIDIA GPU detected — CPU-only mode"}}
+	}
+	var results []CheckResult
+	for _, gpu := range hw.GPUs {
+		results = append(results, CheckResult{
+			Name:    fmt.Sprintf("GPU %d", gpu.Index),
+			Status:  "ok",
+			Message: fmt.Sprintf("%s — %d MiB VRAM (driver: %s, CUDA: %s)", gpu.Name, gpu.VRAMMiB, gpu.DriverVer, gpu.CUDAVer),
+		})
+	}
+	results = append(results, checkNvidiaContainerToolkit())
+	return results
+}
+
+func renderDoctorJSON(results []CheckResult) error {
+	type jsonResult struct {
+		Name    string `json:"name"`
+		Status  string `json:"status"`
+		Message string `json:"message"`
+		Fix     string `json:"fix,omitempty"`
+	}
+	out := make([]jsonResult, len(results))
+	for i, r := range results {
+		out[i] = jsonResult{Name: r.Name, Status: r.Status, Message: r.Message, Fix: r.Fix}
+	}
+	data, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(data))
+	return nil
+}
+
+func renderDoctorTable(_ *hardware.Info, results []CheckResult) error {
 	bold := color.New(color.Bold)
 	cyan := color.New(color.FgCyan, color.Bold)
 
@@ -48,87 +139,12 @@ func runDoctor(_ bool) error {
 	_, _ = cyan.Println("╚══════════════════════════════════════════╝")
 	fmt.Printf("  Checked: %s\n\n", time.Now().Format("2006-01-02 15:04:05"))
 
-	results := make([]CheckResult, 0, 20)
-	var hasFailures bool
-
-	// ── Hardware Detection ──────────────────────────────────────────────────
 	_, _ = bold.Println("  Hardware")
-	hw, err := hardware.Detect()
-	if err != nil {
-		results = append(results, CheckResult{
-			Name: "Hardware Detection", Status: "warn",
-			Message: fmt.Sprintf("Partial detection: %v", err),
-		})
-	} else {
-		results = append(results, CheckResult{
-			Name:    "OS",
-			Status:  osCheckStatus(hw),
-			Message: fmt.Sprintf("%s (kernel: %s, arch: %s)", hw.OS.PrettyName, hw.OS.KernelVer, hw.OS.Arch),
-		})
-		results = append(results, CheckResult{
-			Name:    "CPU",
-			Status:  "ok",
-			Message: fmt.Sprintf("%s — %d cores / %d threads", hw.CPU.Model, hw.CPU.Cores, hw.CPU.Threads),
-		})
-		ramStatus := "ok"
-		if hw.RAM.TotalMB < 8192 {
-			ramStatus = "warn"
-		}
-		results = append(results, CheckResult{
-			Name:    "RAM",
-			Status:  ramStatus,
-			Message: fmt.Sprintf("Total: %d MB / Free: %d MB", hw.RAM.TotalMB, hw.RAM.FreeMB),
-			Fix:     ifStr(ramStatus == "warn", "Minimum 8GB RAM recommended for CPU inference"),
-		})
-		diskStatus := "ok"
-		if hw.Disk.FreeGB < 20 {
-			diskStatus = "fail"
-		} else if hw.Disk.FreeGB < 50 {
-			diskStatus = "warn"
-		}
-		results = append(results, CheckResult{
-			Name:    "Disk Space",
-			Status:  diskStatus,
-			Message: fmt.Sprintf("Free: %d GB / Total: %d GB", hw.Disk.FreeGB, hw.Disk.TotalGB),
-			Fix:     ifStr(diskStatus != "ok", "Free at least 50GB for models and container images"),
-		})
-	}
-
-	// ── Docker ──────────────────────────────────────────────────────────────
 	_, _ = bold.Println("\n  Docker")
-	results = append(results, checkDocker()...)
-
-	// ── GPU ─────────────────────────────────────────────────────────────────
 	_, _ = bold.Println("\n  NVIDIA GPU")
-	if hw != nil && hw.HasGPU {
-		for _, gpu := range hw.GPUs {
-			results = append(results, CheckResult{
-				Name:    fmt.Sprintf("GPU %d", gpu.Index),
-				Status:  "ok",
-				Message: fmt.Sprintf("%s — %d MiB VRAM (driver: %s, CUDA: %s)", gpu.Name, gpu.VRAMMiB, gpu.DriverVer, gpu.CUDAVer),
-			})
-		}
-		results = append(results, checkNvidiaContainerToolkit())
-	} else {
-		results = append(results, CheckResult{
-			Name:    "NVIDIA GPU",
-			Status:  "info",
-			Message: "No NVIDIA GPU detected — CPU-only mode",
-		})
-	}
-
-	// ── Ports ───────────────────────────────────────────────────────────────
 	_, _ = bold.Println("\n  Ports")
-	for _, port := range doctorPortList {
-		results = append(results, checkPort(port))
-	}
-
-	// ── Network ─────────────────────────────────────────────────────────────
 	_, _ = bold.Println("\n  Network")
-	results = append(results, checkNetwork()...)
 
-	// ── Render results ──────────────────────────────────────────────────────
-	fmt.Println()
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"Check", "Status", "Details"})
 	table.SetBorder(false)
@@ -137,6 +153,7 @@ func runDoctor(_ bool) error {
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
 	table.SetColWidth(50)
 
+	var hasFailures bool
 	for _, r := range results {
 		icon, colorCode := statusIcon(r.Status)
 		statusStr := color.New(colorCode).Sprintf("%s %s", icon, strings.ToUpper(r.Status))
@@ -147,7 +164,6 @@ func runDoctor(_ bool) error {
 	}
 	table.Render()
 
-	// ── Fixes ───────────────────────────────────────────────────────────────
 	var fixes []CheckResult
 	for _, r := range results {
 		if r.Fix != "" {
@@ -162,7 +178,6 @@ func runDoctor(_ bool) error {
 		}
 	}
 
-	// ── Summary ─────────────────────────────────────────────────────────────
 	fmt.Println()
 	if hasFailures {
 		color.Red("  ✗ System has issues that need to be fixed before installation.")

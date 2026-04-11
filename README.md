@@ -19,7 +19,7 @@
 
 ### One-liner install
 ```bash
-curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.0.0/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.1.0/install.sh | sudo bash
 ```
 
 ### From source
@@ -69,35 +69,35 @@ aistack models list
 aistack models recommend
 
 # Estimate resources for a specific model
-aistack models estimate --model qwen2.5:14b --ctx 8192
-aistack models estimate --model llama3.1:70b --ctx 4096 --quant q4_K_M
+aistack models estimate --model qwen3:14b --ctx 8192
+aistack models estimate --model deepseek-r1:70b --ctx 4096 --quant q4_K_M
 
 # Download a model
-aistack models pull qwen2.5:7b
-aistack models pull llama3.2:3b
+aistack models pull qwen3:8b
+aistack models pull gemma3:4b
 
 # Benchmark a loaded model (tokens/sec)
-aistack models benchmark llama3.2:3b
+aistack models benchmark qwen3:8b
 ```
 
 ### Example Recommendations by Hardware
 
 **CPU only (16GB RAM)**
-- ✓ Llama 3.2 3B (q4_K_M) — best general chat
-- ✓ Qwen 2.5 3B (q4_K_M) — best multilingual
-- ✓ Phi 3.5 Mini (q4_K_M) — best coding
+- ✓ Qwen 3 4B (q4_K_M) — best general chat
+- ✓ Gemma 3 4B (q4_K_M) — strong quality for size
+- ✓ Qwen 3 0.6B (q8_0) — ultra-fast for simple tasks
 
 **NVIDIA 8GB VRAM**
-- ✓ Llama 3.1 8B (q4_K_M) — 5.4 GB VRAM
-- ✓ Qwen 2.5 7B (q4_K_M) — 4.8 GB VRAM
-- ✓ Qwen 2.5 Coder 7B — best coding
-- ⚠ Mistral 7B (q5_K_M) — tight fit
+- ✓ Qwen 3 8B (q4_K_M) — best all-rounder
+- ✓ Gemma 3 12B (q4_K_M) — strong general model
+- ✓ DeepSeek R1 7B (q5_K_M) — best reasoning
+- ✓ Devstral 24B (q4_K_M) — best coding (tight fit)
 
 **NVIDIA 24GB VRAM**
-- ✓ Qwen 2.5 14B (q6_K) — best quality/speed
-- ✓ DeepSeek R1 14B — best reasoning
-- ✓ Gemma 2 27B (q4_K_M) — near-70B quality
-- ✓ Llama 3.1 70B (q2_K) — maximum quality (tight)
+- ✓ Qwen 3 32B (q4_K_M) — flagship quality
+- ✓ DeepSeek R1 32B (q4_K_M) — top reasoning
+- ✓ Gemma 3 27B (q5_K_M) — Google's best
+- ✓ Llama 4 Scout (q4_K_M) — Meta's MoE (tight fit)
 
 ## Supported Platforms
 

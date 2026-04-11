@@ -22,7 +22,7 @@ services:
 
   # ── Ollama ─────────────────────────────────────────────────────────────────
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.9
     container_name: aistack-ollama
     restart: unless-stopped
     networks:
@@ -51,7 +51,7 @@ services:
 
   # ── Open WebUI ─────────────────────────────────────────────────────────────
   openwebui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:latest
     container_name: aistack-openwebui
     restart: unless-stopped
     networks:
@@ -59,7 +59,7 @@ services:
     volumes:
       - openwebui-data:/app/backend/data
     ports:
-      - "${WEBUI_HOST:-0.0.0.0}:${WEBUI_PORT:-3000}:8080"
+      - "${WEBUI_HOST:-127.0.0.1}:${WEBUI_PORT:-3000}:8080"
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
@@ -70,6 +70,10 @@ services:
       - WEBUI_NAME=${WEBUI_NAME:-AIStack}
       - ENABLE_ADMIN_EXPORT=${ENABLE_ADMIN_EXPORT:-True}
       - ENV=${WEBUI_ENV:-prod}
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     depends_on:
       ollama:
         condition: service_healthy
@@ -115,7 +119,7 @@ services:
 
   # ── Prometheus (optional, enabled via profile) ─────────────────────────────
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.3
     container_name: aistack-prometheus
     restart: unless-stopped
     profiles: ["monitoring"]
@@ -126,6 +130,10 @@ services:
       - prometheus-data:/prometheus
     ports:
       - "127.0.0.1:9090:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=30d'
@@ -137,7 +145,7 @@ services:
 
   # ── Grafana (optional, enabled via profile) ────────────────────────────────
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.6
     container_name: aistack-grafana
     restart: unless-stopped
     profiles: ["monitoring"]
@@ -148,8 +156,12 @@ services:
       - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
     ports:
       - "127.0.0.1:3001:3000"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-aistack}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
       - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus

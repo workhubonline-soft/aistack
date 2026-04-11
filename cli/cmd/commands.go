@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -151,6 +152,14 @@ func generateConfig() error {
 		return err
 	}
 	content = strings.ReplaceAll(content, "CHANGE_ME_RANDOM_SECRET_KEY_32CHARS", secret)
+
+	// Generate random Grafana password
+	grafanaPass, err := generateSecret(16)
+	if err != nil {
+		return err
+	}
+	content = strings.ReplaceAll(content, "CHANGE_ME_GRAFANA_PASSWORD", grafanaPass)
+
 	content = strings.ReplaceAll(content, "AISTACK_INSTALLED_AT=", "AISTACK_INSTALLED_AT="+time.Now().Format(time.RFC3339))
 
 	hostname, _ := os.Hostname()
@@ -161,8 +170,8 @@ func generateConfig() error {
 
 func pullDockerImages() error {
 	images := []string{
-		"ollama/ollama:latest",
-		"ghcr.io/open-webui/open-webui:main",
+		"ollama/ollama:0.9",
+		"ghcr.io/open-webui/open-webui:latest",
 	}
 	for _, img := range images {
 		cmd := exec.Command("docker", "pull", img)
@@ -427,15 +436,25 @@ func backupConfigs(tw *tar.Writer) error {
 }
 
 func backupOpenWebUI(tw *tar.Writer) error {
-	// Export Open WebUI volume via docker
-	out, err := exec.Command("docker", "run", "--rm",
+	cmd := exec.Command("docker", "run", "--rm",
 		"-v", "aistack-openwebui-data:/data",
 		"alpine", "tar", "-czf", "-", "/data",
-	).Output()
+	)
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
+		return fmt.Errorf("creating pipe: %w", err)
+	}
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("starting docker: %w", err)
+	}
+	data, err := io.ReadAll(stdout)
+	if err != nil {
+		return fmt.Errorf("reading volume data: %w", err)
+	}
+	if err := cmd.Wait(); err != nil {
 		return fmt.Errorf("docker volume export: %w", err)
 	}
-	return addBytesToTar(tw, out, "volumes/openwebui-data.tar.gz")
+	return addBytesToTar(tw, data, "volumes/openwebui-data.tar.gz")
 }
 
 // ── report ────────────────────────────────────────────────────────────────────

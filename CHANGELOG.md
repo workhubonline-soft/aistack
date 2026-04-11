@@ -10,6 +10,31 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v2.1.0] — 2026-04-11
+
+### Security
+- Default WebUI binding changed from `0.0.0.0` to `127.0.0.1` (opt-in for external access)
+- Removed `chmod 644 .env` from install.sh — secrets now stay at `0600`
+- Grafana password auto-generated randomly instead of hardcoded `aistack`
+- OLLAMA_HOST environment variable validated to prevent URL injection
+
+### Changed
+- **Model catalog v2.0**: replaced Qwen 2.5, Llama 3.x, Gemma 2 with Qwen 3, Llama 4, Gemma 3, Devstral
+- Ollama HTTP client: consistent timeouts (30s default, no timeout for streaming, 5min for generation)
+- Docker images pinned: ollama:0.9, open-webui:latest, prometheus:v3.3, grafana:11.6
+- Resource limits added for OpenWebUI (2G), Prometheus (512M), Grafana (256M)
+- Backup uses streaming pipe instead of loading entire volume into memory
+
+### Added
+- `aistack doctor --json` — machine-readable JSON output for diagnostics
+- DeepSeek R1 70B, Devstral 24B, Qwen 3 30B-A3B (MoE) to model catalog
+- Context length validation (128-131072) for `models estimate`
+
+### Fixed
+- Doctor command refactored: `--json` flag now works, function split into smaller units
+
+---
+
 ## [v2.0.0] — 2026-04-09
 
 ### Changed
@@ -52,6 +77,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Idempotent installs (safe to re-run)
 - Non-interactive mode: `--yes --profile --no-model-download`
 
-[Unreleased]: https://github.com/workhubonline-soft/aistack/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/workhubonline-soft/aistack/compare/v2.1.0...HEAD
+[v2.1.0]: https://github.com/workhubonline-soft/aistack/compare/v2.0.0...v2.1.0
 [v2.0.0]: https://github.com/workhubonline-soft/aistack/compare/v0.1.0...v2.0.0
 [v0.1.0]: https://github.com/workhubonline-soft/aistack/releases/tag/v0.1.0

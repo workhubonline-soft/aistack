@@ -3,14 +3,14 @@
 # AIStack Installer — Bootstrap Script
 # Supports: Ubuntu 22.04 LTS, 24.04 LTS (x86_64)
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.0.0/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.1.0/install.sh | bash
 #   ./install.sh [--yes] [--profile cpu|gpu] [--no-model-download]
 # ==============================================================================
 
 set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-AISTACK_VERSION="${AISTACK_VERSION:-2.0.0}"
+AISTACK_VERSION="${AISTACK_VERSION:-2.1.0}"
 AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
@@ -349,9 +349,6 @@ run_aistack() {
   if $NO_MODEL_DOWNLOAD; then flags="$flags --no-model-download"; fi
 
   "$AISTACK_BIN" install $flags
-  # Fix permissions for non-root usage
-  chmod 644 "${AISTACK_DIR}/.env" 2>/dev/null || true
-  chmod -R 755 "${AISTACK_DIR}" 2>/dev/null || true
   "$AISTACK_BIN" up
 }
 
