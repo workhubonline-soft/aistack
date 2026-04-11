@@ -52,6 +52,8 @@ die()     { error "$*"; exit 1; }
 
 confirm() {
   if $AUTO_YES; then return 0; fi
+  # Auto-confirm when stdin is not a terminal (e.g. curl | bash)
+  if [[ ! -t 0 ]]; then return 0; fi
   read -rp "$(printf "${YELLOW}[?]${NC} %s [y/N]: " "$*")" answer
   [[ "$answer" =~ ^[Yy]$ ]]
 }
