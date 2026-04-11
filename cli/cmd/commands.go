@@ -170,7 +170,7 @@ func generateConfig() error {
 
 func pullDockerImages() error {
 	images := []string{
-		"ollama/ollama:0.9",
+		"ollama/ollama:latest",
 		"ghcr.io/open-webui/open-webui:latest",
 	}
 	for _, img := range images {

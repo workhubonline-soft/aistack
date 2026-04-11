@@ -22,7 +22,7 @@ services:
 
   # ── Ollama ─────────────────────────────────────────────────────────────────
   ollama:
-    image: ollama/ollama:0.9
+    image: ollama/ollama:latest
     container_name: aistack-ollama
     restart: unless-stopped
     networks:
