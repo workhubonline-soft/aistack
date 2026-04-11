@@ -444,15 +444,15 @@ func backupOpenWebUI(tw *tar.Writer) error {
 	if err != nil {
 		return fmt.Errorf("creating pipe: %w", err)
 	}
-	if err := cmd.Start(); err != nil {
-		return fmt.Errorf("starting docker: %w", err)
+	if startErr := cmd.Start(); startErr != nil {
+		return fmt.Errorf("starting docker: %w", startErr)
 	}
-	data, err := io.ReadAll(stdout)
-	if err != nil {
-		return fmt.Errorf("reading volume data: %w", err)
+	data, readErr := io.ReadAll(stdout)
+	if readErr != nil {
+		return fmt.Errorf("reading volume data: %w", readErr)
 	}
-	if err := cmd.Wait(); err != nil {
-		return fmt.Errorf("docker volume export: %w", err)
+	if waitErr := cmd.Wait(); waitErr != nil {
+		return fmt.Errorf("docker volume export: %w", waitErr)
 	}
 	return addBytesToTar(tw, data, "volumes/openwebui-data.tar.gz")
 }

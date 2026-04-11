@@ -99,7 +99,7 @@ func checkGPU(hw *hardware.Info) []CheckResult {
 	if hw == nil || !hw.HasGPU {
 		return []CheckResult{{Name: "NVIDIA GPU", Status: "info", Message: "No NVIDIA GPU detected — CPU-only mode"}}
 	}
-	var results []CheckResult
+	results := make([]CheckResult, 0, len(hw.GPUs)+1)
 	for _, gpu := range hw.GPUs {
 		results = append(results, CheckResult{
 			Name:    fmt.Sprintf("GPU %d", gpu.Index),
@@ -111,16 +111,17 @@ func checkGPU(hw *hardware.Info) []CheckResult {
 	return results
 }
 
+type jsonCheckResult struct {
+	Name    string `json:"name"`
+	Status  string `json:"status"`
+	Message string `json:"message"`
+	Fix     string `json:"fix,omitempty"`
+}
+
 func renderDoctorJSON(results []CheckResult) error {
-	type jsonResult struct {
-		Name    string `json:"name"`
-		Status  string `json:"status"`
-		Message string `json:"message"`
-		Fix     string `json:"fix,omitempty"`
-	}
-	out := make([]jsonResult, len(results))
+	out := make([]jsonCheckResult, len(results))
 	for i, r := range results {
-		out[i] = jsonResult{Name: r.Name, Status: r.Status, Message: r.Message, Fix: r.Fix}
+		out[i] = jsonCheckResult(r)
 	}
 	data, err := json.MarshalIndent(out, "", "  ")
 	if err != nil {
