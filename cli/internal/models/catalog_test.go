@@ -51,8 +51,8 @@ func TestFindModel(t *testing.T) {
 		query   string
 		wantNil bool
 	}{
-		{"llama3.1:8b", false},
-		{"qwen2.5:14b", false},
+		{"qwen3:8b", false},
+		{"qwen3:14b", false},
 		{"nonexistent:99b", true},
 		{"deepseek-r1:7b", false},
 	}
@@ -226,7 +226,7 @@ func TestCompatibility_GPU24GB(t *testing.T) {
 
 	// 14B q6 ≈ 12.5 GB — fits easily in 24GB
 	m := &Model{
-		ID:              "qwen2.5:14b",
+		ID:              "qwen3:14b",
 		ParamsB:         14.0,
 		DefaultQuant:    "q6_K",
 		AvailableQuants: []string{"q6_K"},
@@ -330,15 +330,15 @@ func loadTestCatalog(t *testing.T) *Catalog {
 	return &Catalog{
 		Models: []Model{
 			{
-				ID: "llama3.1:8b", Name: "Llama 3.1 8B", Family: "llama",
-				ParamsB: 8.0, Engine: "ollama", OllamaTag: "llama3.1:8b",
+				ID: "qwen3:8b", Name: "Qwen 3 8B", Family: "qwen",
+				ParamsB: 8.0, Engine: "ollama", OllamaTag: "qwen3:8b",
 				SizeLabel: "8B", DefaultQuant: "q4_K_M",
 				AvailableQuants: []string{"q4_K_M", "q5_K_M", "q8_0"},
 				Tags:            []string{"chat", "coding"}, DefaultCtx: 8192, MaxCtx: 131072,
 			},
 			{
-				ID: "qwen2.5:14b", Name: "Qwen 2.5 14B", Family: "qwen",
-				ParamsB: 14.0, Engine: "ollama", OllamaTag: "qwen2.5:14b",
+				ID: "qwen3:14b", Name: "Qwen 3 14B", Family: "qwen",
+				ParamsB: 14.0, Engine: "ollama", OllamaTag: "qwen3:14b",
 				SizeLabel: "14B", DefaultQuant: "q4_K_M",
 				AvailableQuants: []string{"q4_K_M", "q5_K_M", "q6_K", "q8_0"},
 				Tags:            []string{"chat", "coding", "multilingual"}, DefaultCtx: 8192, MaxCtx: 131072,
