@@ -119,7 +119,7 @@ services:
 
   # ── Prometheus (optional, enabled via profile) ─────────────────────────────
   prometheus:
-    image: prom/prometheus:v3.3
+    image: prom/prometheus:latest
     container_name: aistack-prometheus
     restart: unless-stopped
     profiles: ["monitoring"]
