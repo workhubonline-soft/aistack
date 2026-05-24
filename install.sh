@@ -3,14 +3,14 @@
 # AIStack Installer — Bootstrap Script
 # Supports: Ubuntu 22.04 LTS, 24.04 LTS (x86_64)
 # Usage:
-#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.1.0/install.sh | bash
+#   curl -sSL https://raw.githubusercontent.com/workhubonline-soft/aistack/v2.1.1/install.sh | bash
 #   ./install.sh [--yes] [--profile cpu|gpu] [--no-model-download]
 # ==============================================================================
 
 set -euo pipefail
 
 # ── Constants ─────────────────────────────────────────────────────────────────
-AISTACK_VERSION="${AISTACK_VERSION:-2.1.0}"
+AISTACK_VERSION="${AISTACK_VERSION:-2.1.1}"
 AISTACK_DIR="${AISTACK_DIR:-/opt/aistack}"
 AISTACK_BIN="/usr/local/bin/aistack"
 AISTACK_LOG_DIR="/var/log/aistack"
@@ -336,6 +336,39 @@ deploy_aistack() {
   log "AIStack directory: ${AISTACK_DIR}"
 }
 
+# ── Permissions ───────────────────────────────────────────────────────────────
+# Make AIStack readable by members of the 'docker' group so the CLI can be
+# used without sudo (since running containers already requires docker group).
+setup_permissions() {
+  header "Setting up permissions"
+
+  if ! getent group docker >/dev/null; then
+    warn "docker group not found — skipping non-sudo setup"
+    return 0
+  fi
+
+  # Directories: traverse + read for group
+  find "$AISTACK_DIR" -type d -exec chgrp docker {} + 2>/dev/null || true
+  find "$AISTACK_DIR" -type d -exec chmod 750 {} + 2>/dev/null || true
+
+  # Regular config files: group-readable
+  find "$AISTACK_DIR" -type f ! -name ".env" -exec chgrp docker {} + 2>/dev/null || true
+  find "$AISTACK_DIR" -type f ! -name ".env" -exec chmod 640 {} + 2>/dev/null || true
+
+  # .env contains secrets — group-readable, not world
+  if [[ -f "$AISTACK_DIR/.env" ]]; then
+    chgrp docker "$AISTACK_DIR/.env"
+    chmod 640 "$AISTACK_DIR/.env"
+  fi
+
+  # State directory needs to be group-writable for saveState()
+  chgrp -R docker "$AISTACK_STATE_DIR" 2>/dev/null || true
+  chmod 770 "$AISTACK_STATE_DIR" 2>/dev/null || true
+  find "$AISTACK_STATE_DIR" -type f -exec chmod 660 {} + 2>/dev/null || true
+
+  log "Permissions configured for docker group (CLI usable without sudo)"
+}
+
 # ── Run ───────────────────────────────────────────────────────────────────────
 run_aistack() {
   header "Starting AIStack"
@@ -351,6 +384,7 @@ run_aistack() {
   if $NO_MODEL_DOWNLOAD; then flags="$flags --no-model-download"; fi
 
   "$AISTACK_BIN" install $flags
+  setup_permissions
   "$AISTACK_BIN" up
 }
 

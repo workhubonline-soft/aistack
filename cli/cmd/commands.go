@@ -601,10 +601,11 @@ func printAccessInfo() {
 }
 
 func saveState(status string) {
-	_ = os.MkdirAll("/var/lib/aistack", 0o755)
+	_ = os.MkdirAll("/var/lib/aistack", 0o770)
 	content := fmt.Sprintf(`{"status":%q,"updated_at":%q}`,
 		status, time.Now().Format(time.RFC3339))
-	_ = os.WriteFile(stateFile, []byte(content), 0o644)
+	// 0o660 — owner+group RW; install.sh chgrp's this dir to docker
+	_ = os.WriteFile(stateFile, []byte(content), 0o660)
 }
 
 func generateSecret(length int) (string, error) {

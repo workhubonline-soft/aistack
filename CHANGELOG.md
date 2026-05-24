@@ -10,6 +10,16 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [v2.1.1] — 2026-05-24
+
+### Fixed
+- Nginx container failed to start: relative volume paths (`./configs/...`) were resolved relative to the compose file directory, not the project root. Changed to `../configs/...`.
+- Nginx upstream `openwebui:8080` was resolved at startup, crashing nginx if OpenWebUI restarted. Now uses Docker's embedded DNS at request time.
+- `aistack` CLI required `sudo` because `/opt/aistack` was root-only. Installer now `chgrp docker` on config dirs and sets group-read permissions, making the CLI usable without `sudo` for users in the `docker` group.
+- `saveState()` now writes state file with `0o660` (group-writable) so non-root invocations work.
+
+---
+
 ## [v2.1.0] — 2026-04-11
 
 ### Security
